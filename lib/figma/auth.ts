@@ -56,13 +56,16 @@ export async function exchangeCodeForTokens(
   const clientId = requireEnv("FIGMA_CLIENT_ID");
   const clientSecret = requireEnv("FIGMA_CLIENT_SECRET");
   const redirectUri = getRedirectUri(requestOrigin);
+  const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
   const response = await fetch("https://www.figma.com/api/v1/oauth/token", {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${basicAuth}`,
+    },
     body: new URLSearchParams({
       client_id: clientId,
-      client_secret: clientSecret,
       redirect_uri: redirectUri,
       code,
       grant_type: "authorization_code",
@@ -89,13 +92,16 @@ export async function refreshAccessToken(
 ): Promise<FigmaTokenResponse> {
   const clientId = requireEnv("FIGMA_CLIENT_ID");
   const clientSecret = requireEnv("FIGMA_CLIENT_SECRET");
+  const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
   const response = await fetch("https://www.figma.com/api/v1/oauth/token", {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${basicAuth}`,
+    },
     body: new URLSearchParams({
       client_id: clientId,
-      client_secret: clientSecret,
       refresh_token: refreshToken,
       grant_type: "refresh_token",
     }),
@@ -104,7 +110,7 @@ export async function refreshAccessToken(
   if (!response.ok) {
     const text = await response.text();
     throw new FigmaApiError(
-      "Failed to refresh Figma access token",
+      `Failed to refresh Figma access token: ${text}`,
       response.status,
       text,
     );

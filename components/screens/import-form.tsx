@@ -102,7 +102,7 @@ export function ImportForm({
       const baseMsg = errorMessages[error] ?? `Figma connection failed: ${error}`;
       setOauthFeedback({
         type: "error",
-        message: details ? `${baseMsg}: ${decodeURIComponent(details)}` : baseMsg,
+        message: details ? `${baseMsg} (${details})` : baseMsg,
       });
     }
 

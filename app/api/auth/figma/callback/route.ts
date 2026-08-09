@@ -82,7 +82,7 @@ export async function GET(request: Request) {
     const details = err instanceof Error ? err.message : String(err);
     const errorUrl = new URL(returnUrl, url.origin);
     errorUrl.searchParams.set("figma_error", "token_exchange_failed");
-    errorUrl.searchParams.set("details", encodeURIComponent(details));
+    errorUrl.searchParams.set("details", details);
     return NextResponse.redirect(errorUrl);
   }
 }

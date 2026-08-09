@@ -11,10 +11,13 @@ function requireEnv(name: string): string {
   return value;
 }
 
-function getRedirectUri(): string {
+function getRedirectUri(requestOrigin?: string): string {
   const explicit = process.env.FIGMA_REDIRECT_URI?.trim();
-  if (explicit && !explicit.startsWith("your-")) {
+  if (explicit && !explicit.startsWith("your-") && !explicit.includes("localhost")) {
     return explicit;
+  }
+  if (requestOrigin) {
+    return `${requestOrigin}/api/auth/figma/callback`;
   }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}/api/auth/figma/callback`;
@@ -27,9 +30,9 @@ function getRedirectUri(): string {
  * The `state` param should be a cryptographically random string stored
  * in a cookie for CSRF verification on callback.
  */
-export function generateAuthUrl(state: string): string {
+export function generateAuthUrl(state: string, requestOrigin?: string): string {
   const clientId = requireEnv("FIGMA_CLIENT_ID");
-  const redirectUri = getRedirectUri();
+  const redirectUri = getRedirectUri(requestOrigin);
   const scope = process.env.FIGMA_OAUTH_SCOPE?.trim() || "file_content:read,file_metadata:read,current_user:read";
 
   const params = new URLSearchParams({
@@ -48,10 +51,11 @@ export function generateAuthUrl(state: string): string {
  */
 export async function exchangeCodeForTokens(
   code: string,
+  requestOrigin?: string,
 ): Promise<FigmaTokenResponse> {
   const clientId = requireEnv("FIGMA_CLIENT_ID");
   const clientSecret = requireEnv("FIGMA_CLIENT_SECRET");
-  const redirectUri = getRedirectUri();
+  const redirectUri = getRedirectUri(requestOrigin);
 
   const response = await fetch("https://www.figma.com/api/v1/oauth/token", {
     method: "POST",
@@ -68,7 +72,7 @@ export async function exchangeCodeForTokens(
   if (!response.ok) {
     const text = await response.text();
     throw new FigmaApiError(
-      "Failed to exchange Figma authorization code for tokens",
+      `Failed to exchange Figma authorization code for tokens: ${text}`,
       response.status,
       text,
     );

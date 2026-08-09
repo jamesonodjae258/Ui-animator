@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
 
     // Exchange code for tokens
-    const tokens = await exchangeCodeForTokens(code);
+    const tokens = await exchangeCodeForTokens(code, url.origin);
 
     // Fetch Figma user profile
     const figmaUser = await fetchFigmaUser(tokens.access_token);

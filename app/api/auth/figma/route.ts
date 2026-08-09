@@ -15,8 +15,9 @@ export async function GET(request: Request) {
     // Generate cryptographically random state for CSRF protection
     const state = randomBytes(32).toString("hex");
 
-    const returnUrl = new URL(request.url).searchParams.get("returnUrl") ?? "/";
-    const authUrl = generateAuthUrl(state);
+    const requestUrl = new URL(request.url);
+    const returnUrl = requestUrl.searchParams.get("returnUrl") ?? "/";
+    const authUrl = generateAuthUrl(state, requestUrl.origin);
 
     const response = NextResponse.redirect(authUrl);
 

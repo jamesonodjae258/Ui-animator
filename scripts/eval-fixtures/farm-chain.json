@@ -1,0 +1,43 @@
+{
+  "project_brief": "FarmChain gives organic farmers a simple way to prove origin and certify compliance from field to grocery store shelf. It replaces paper logs with instant QR-code batch verification that buyers trust.",
+  "target_duration_seconds": 30,
+  "style_preset": "bold_launch",
+  "frames": [
+    {
+      "frame_id": "frame-fc-1",
+      "name": "Produce Origin Map",
+      "order_in_flow": 1,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-fc-2",
+      "name": "Paper Compliance Logs (Problem)",
+      "order_in_flow": 2,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-fc-3",
+      "name": "Field Harvest Log Entry",
+      "order_in_flow": 3,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-fc-4",
+      "name": "QR Code Batch Generator",
+      "order_in_flow": 4,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-fc-5",
+      "name": "Store Shelf Verification Screen",
+      "order_in_flow": 5,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-fc-6",
+      "name": "Certified Organic Stamp",
+      "order_in_flow": 6,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    }
+  ]
+}

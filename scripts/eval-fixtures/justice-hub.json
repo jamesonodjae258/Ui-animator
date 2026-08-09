@@ -1,0 +1,43 @@
+{
+  "project_brief": "JusticeHub is a case management platform for solo lawyers who lose track of client work across email and spreadsheets. It puts every case, deadline, and client note on one screen so nothing falls through the cracks.",
+  "target_duration_seconds": 30,
+  "style_preset": "clean_saas",
+  "frames": [
+    {
+      "frame_id": "frame-jh-1",
+      "name": "Dashboard Overview",
+      "order_in_flow": 1,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-jh-2",
+      "name": "Cluttered Email & Spreadsheet View",
+      "order_in_flow": 2,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-jh-3",
+      "name": "Unified Case Timeline",
+      "order_in_flow": 3,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-jh-4",
+      "name": "Automated Deadline Tracker",
+      "order_in_flow": 4,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-jh-5",
+      "name": "Client Activity Log & Notes",
+      "order_in_flow": 5,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-jh-6",
+      "name": "Case Closed Summary",
+      "order_in_flow": 6,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    }
+  ]
+}

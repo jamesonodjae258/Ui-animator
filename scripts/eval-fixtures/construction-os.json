@@ -1,0 +1,37 @@
+{
+  "project_brief": "ConstructionOS is a jobsite safety and equipment tracking app for commercial general contractors. It eliminates lost gear and compliance fines by tracking tools and daily safety sign-offs in real time.",
+  "target_duration_seconds": 30,
+  "style_preset": "clean_saas",
+  "frames": [
+    {
+      "frame_id": "frame-cos-1",
+      "name": "Live Jobsite Dashboard",
+      "order_in_flow": 1,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-cos-2",
+      "name": "Missing Tool Alert (Problem)",
+      "order_in_flow": 2,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-cos-3",
+      "name": "Equipment Bluetooth Radar",
+      "order_in_flow": 3,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-cos-4",
+      "name": "Crew Daily Safety Sign-off",
+      "order_in_flow": 4,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    },
+    {
+      "frame_id": "frame-cos-5",
+      "name": "OSHA Compliance Certificate",
+      "order_in_flow": 5,
+      "thumbnail_path": "scripts/eval-fixtures/images/placeholder.png"
+    }
+  ]
+}

@@ -30,7 +30,7 @@ function getRedirectUri(): string {
 export function generateAuthUrl(state: string): string {
   const clientId = requireEnv("FIGMA_CLIENT_ID");
   const redirectUri = getRedirectUri();
-  const scope = process.env.FIGMA_OAUTH_SCOPE?.trim() || "file_read,current_user:read";
+  const scope = process.env.FIGMA_OAUTH_SCOPE?.trim() || "file_content:read,file_metadata:read,current_user:read";
 
   const params = new URLSearchParams({
     client_id: clientId,

@@ -39,8 +39,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(authUrl);
   } catch (error) {
     console.error("Figma OAuth initiation error:", error);
+    const details = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to initiate Figma connection" },
+      { error: "Failed to initiate Figma connection", details },
       { status: 500 },
     );
   }

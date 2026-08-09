@@ -11,6 +11,17 @@ function requireEnv(name: string): string {
   return value;
 }
 
+function getRedirectUri(): string {
+  const explicit = process.env.FIGMA_REDIRECT_URI?.trim();
+  if (explicit && !explicit.startsWith("your-")) {
+    return explicit;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api/auth/figma/callback`;
+  }
+  return "http://localhost:3000/api/auth/figma/callback";
+}
+
 /**
  * Build the Figma OAuth authorization URL.
  * The `state` param should be a cryptographically random string stored
@@ -18,7 +29,7 @@ function requireEnv(name: string): string {
  */
 export function generateAuthUrl(state: string): string {
   const clientId = requireEnv("FIGMA_CLIENT_ID");
-  const redirectUri = requireEnv("FIGMA_REDIRECT_URI");
+  const redirectUri = getRedirectUri();
   const scope = process.env.FIGMA_OAUTH_SCOPE?.trim() || "file_read,current_user:read";
 
   const params = new URLSearchParams({
@@ -40,7 +51,7 @@ export async function exchangeCodeForTokens(
 ): Promise<FigmaTokenResponse> {
   const clientId = requireEnv("FIGMA_CLIENT_ID");
   const clientSecret = requireEnv("FIGMA_CLIENT_SECRET");
-  const redirectUri = requireEnv("FIGMA_REDIRECT_URI");
+  const redirectUri = getRedirectUri();
 
   const response = await fetch("https://www.figma.com/api/v1/oauth/token", {
     method: "POST",

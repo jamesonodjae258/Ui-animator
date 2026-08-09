@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -52,6 +52,7 @@ export function ImportForm({
   supabaseUrl,
 }: ImportFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [figmaUrl, setFigmaUrl] = useState("");
   const [urlError, setUrlError] = useState<string | null>(null);
@@ -71,7 +72,53 @@ export function ImportForm({
   });
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
 
+  // OAuth callback feedback
+  const [oauthFeedback, setOauthFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
   const returnUrl = `/projects/${projectId}/import`;
+
+  // Read OAuth result from URL params on mount
+  useEffect(() => {
+    const connected = searchParams.get("figma_connected");
+    const error = searchParams.get("figma_error");
+
+    if (connected === "true") {
+      setOauthFeedback({
+        type: "success",
+        message: "Figma account connected successfully!",
+      });
+    } else if (error) {
+      const errorMessages: Record<string, string> = {
+        access_denied: "You declined the Figma connection request.",
+        missing_params: "OAuth callback was missing required parameters.",
+        invalid_state: "Security validation failed — please try connecting again.",
+        not_authenticated: "You must be logged in to connect Figma.",
+        token_exchange_failed: "Failed to complete Figma authorization. Please try again.",
+      };
+      setOauthFeedback({
+        type: "error",
+        message: errorMessages[error] ?? `Figma connection failed: ${error}`,
+      });
+    }
+
+    // Clean OAuth params from URL without a full reload
+    if (connected || error) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("figma_connected");
+      url.searchParams.delete("figma_error");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
+
+  // Auto-dismiss success feedback after 5 seconds
+  useEffect(() => {
+    if (oauthFeedback?.type !== "success") return;
+    const timer = setTimeout(() => setOauthFeedback(null), 5000);
+    return () => clearTimeout(timer);
+  }, [oauthFeedback]);
 
   // Cycle loading steps during generation
   useEffect(() => {
@@ -212,6 +259,42 @@ export function ImportForm({
 
   return (
     <div className="space-y-8">
+      {/* OAuth feedback banner */}
+      {oauthFeedback && (
+        <div
+          className={`flex items-center justify-between px-4 py-3 rounded-[var(--radius)] text-sm transition-all ${
+            oauthFeedback.type === "success"
+              ? "bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 text-green-700 dark:text-green-400"
+              : "bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {oauthFeedback.type === "success" ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+            )}
+            <span>{oauthFeedback.message}</span>
+          </div>
+          <button
+            onClick={() => setOauthFeedback(null)}
+            className="ml-4 p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Figma connection */}
       <FigmaConnectionCard
         isConnected={isConnected}

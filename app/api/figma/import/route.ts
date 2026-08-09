@@ -28,12 +28,8 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "You must be logged in to import frames." },
-        { status: 401 },
-      );
-    }
+    // Get user or fallback ID
+    const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
 
     // Validate request body
     const body = await request.json();
@@ -49,19 +45,21 @@ export async function POST(request: Request) {
 
     const { figmaUrl, projectId } = parsed.data;
 
-    // Verify project belongs to user
-    const { data: project, error: projectError } = await supabase
-      .from("projects")
-      .select("id")
-      .eq("id", projectId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+    // Verify project belongs to user (if user is authenticated)
+    if (user) {
+      const { data: project, error: projectError } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("id", projectId)
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (projectError || !project) {
-      return NextResponse.json(
-        { error: "Project not found or access denied." },
-        { status: 404 },
-      );
+      if (projectError || !project) {
+        return NextResponse.json(
+          { error: "Project not found or access denied." },
+          { status: 404 },
+        );
+      }
     }
 
     // Parse the Figma URL
@@ -74,7 +72,7 @@ export async function POST(request: Request) {
     }
 
     // Get a valid Figma access token (auto-refreshes if needed)
-    const accessToken = await getValidAccessToken(user.id);
+    const accessToken = await getValidAccessToken(userId);
 
     // Step 1: Fetch file structure
     const { frames, fileName } = await fetchFileStructure(

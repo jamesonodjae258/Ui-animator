@@ -96,11 +96,13 @@ export function ImportForm({
         missing_params: "OAuth callback was missing required parameters.",
         invalid_state: "Security validation failed — please try connecting again.",
         not_authenticated: "You must be logged in to connect Figma.",
-        token_exchange_failed: "Failed to complete Figma authorization. Please try again.",
+        token_exchange_failed: "Failed to complete Figma authorization.",
       };
+      const details = searchParams.get("details");
+      const baseMsg = errorMessages[error] ?? `Figma connection failed: ${error}`;
       setOauthFeedback({
         type: "error",
-        message: errorMessages[error] ?? `Figma connection failed: ${error}`,
+        message: details ? `${baseMsg}: ${decodeURIComponent(details)}` : baseMsg,
       });
     }
 

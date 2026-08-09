@@ -15,19 +15,12 @@ export async function GET(request: Request) {
     // Generate cryptographically random state for CSRF protection
     const state = randomBytes(32).toString("hex");
 
-    // Store the state in a short-lived HTTP-only cookie
-    const cookieStore = await cookies();
-    cookieStore.set("figma_oauth_state", state, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 600, // 10 minutes
-      path: "/",
-    });
-
-    // Also store the return URL so we can redirect back after callback
     const returnUrl = new URL(request.url).searchParams.get("returnUrl") ?? "/";
-    cookieStore.set("figma_oauth_return", returnUrl, {
+    const authUrl = generateAuthUrl(state);
+
+    const response = NextResponse.redirect(authUrl);
+
+    response.cookies.set("figma_oauth_state", state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -35,8 +28,15 @@ export async function GET(request: Request) {
       path: "/",
     });
 
-    const authUrl = generateAuthUrl(state);
-    return NextResponse.redirect(authUrl);
+    response.cookies.set("figma_oauth_return", returnUrl, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 600,
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("Figma OAuth initiation error:", error);
     const details = error instanceof Error ? error.message : "Unknown error";

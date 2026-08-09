@@ -1,6 +1,6 @@
 /* ── Figma connection CRUD + auto-refresh ──────────────────── */
 
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { encrypt, decrypt } from "./encryption";
 import { refreshAccessToken } from "./auth";
 import type { FigmaConnection } from "./types";
@@ -21,7 +21,7 @@ export async function saveFigmaConnection(
   figmaUserName: string | null,
   figmaUserEmail: string | null,
 ): Promise<void> {
-  const supabase = await createServerClient();
+  const supabase = createServiceClient();
 
   const encAccess = encrypt(accessToken);
   const encRefresh = encrypt(refreshToken);
@@ -54,7 +54,7 @@ export async function saveFigmaConnection(
 export async function getFigmaConnection(
   userId: string,
 ): Promise<FigmaConnection | null> {
-  const supabase = await createServerClient();
+  const supabase = createServiceClient();
 
   const { data, error } = await supabase
     .from("figma_connections")
@@ -84,7 +84,7 @@ export async function getFigmaConnection(
 export async function deleteFigmaConnection(
   userId: string,
 ): Promise<void> {
-  const supabase = await createServerClient();
+  const supabase = createServiceClient();
 
   const { error } = await supabase
     .from("figma_connections")

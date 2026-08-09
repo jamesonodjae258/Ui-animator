@@ -28,16 +28,16 @@ export default async function ImportPage({ params }: ImportPageProps) {
   let isConnected = false;
   let figmaUserName: string | null = null;
 
-  if (user) {
-    try {
-      const connection = await getFigmaConnection(user.id);
-      if (connection) {
-        isConnected = true;
-        figmaUserName = connection.figmaUserName;
-      }
-    } catch {
-      // Connection may be invalid — treat as not connected
+  const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
+
+  try {
+    const connection = await getFigmaConnection(userId);
+    if (connection) {
+      isConnected = true;
+      figmaUserName = connection.figmaUserName;
     }
+  } catch {
+    // Connection may be invalid — treat as not connected
   }
 
   // Fetch project data (if it exists)

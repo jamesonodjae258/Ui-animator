@@ -48,10 +48,9 @@ function Navbar() {
       <div className="flex items-center gap-3">
         <Link
           href="/projects"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius)] text-xs font-medium bg-accent text-surface-0 hover:bg-accent-hover transition-colors"
+          className="inline-flex items-center px-3 py-1.5 rounded-[var(--radius)] text-xs font-medium bg-accent text-surface-0 hover:bg-accent-hover transition-colors"
         >
           <span>Dashboard</span>
-          <span className="text-surface-0/70">→</span>
         </Link>
       </div>
     </header>

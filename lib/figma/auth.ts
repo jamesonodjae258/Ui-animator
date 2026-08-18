@@ -58,7 +58,7 @@ export async function exchangeCodeForTokens(
   const redirectUri = getRedirectUri(requestOrigin);
   const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
-  const response = await fetch("https://www.figma.com/api/v1/oauth/token", {
+  const response = await fetch("https://api.figma.com/v1/oauth/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -66,6 +66,7 @@ export async function exchangeCodeForTokens(
     },
     body: new URLSearchParams({
       client_id: clientId,
+      client_secret: clientSecret,
       redirect_uri: redirectUri,
       code,
       grant_type: "authorization_code",
@@ -94,7 +95,7 @@ export async function refreshAccessToken(
   const clientSecret = requireEnv("FIGMA_CLIENT_SECRET");
   const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
-  const response = await fetch("https://www.figma.com/api/v1/oauth/token", {
+  const response = await fetch("https://api.figma.com/v1/oauth/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -102,6 +103,7 @@ export async function refreshAccessToken(
     },
     body: new URLSearchParams({
       client_id: clientId,
+      client_secret: clientSecret,
       refresh_token: refreshToken,
       grant_type: "refresh_token",
     }),

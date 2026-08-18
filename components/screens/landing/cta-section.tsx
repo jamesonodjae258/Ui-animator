@@ -26,9 +26,8 @@ export function LandingCTASection() {
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link href="/projects">
-            <Button variant="primary" size="lg" className="gap-2">
+            <Button variant="primary" size="lg">
               <span>Open projects dashboard</span>
-              <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
         </div>

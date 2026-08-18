@@ -102,7 +102,7 @@ export default async function ProjectsPage() {
                 <div className="flex items-center justify-between text-xs text-text-muted pt-2 border-t border-border">
                   <span>Updated {new Date(proj.updated_at).toLocaleDateString()}</span>
                   <span className="text-text-secondary hover:text-text-primary font-medium">
-                    Open →
+                    Open
                   </span>
                 </div>
               </Card>

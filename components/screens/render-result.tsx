@@ -342,14 +342,14 @@ export function RenderResult({
             size="sm"
             onClick={() => router.push(`/projects/${projectId}/review`)}
           >
-            ← Back to shot review
+            Back to shot review
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.push(`/projects/${projectId}/import`)}
           >
-            Re-import project →
+            Re-import project
           </Button>
         </div>
       </div>

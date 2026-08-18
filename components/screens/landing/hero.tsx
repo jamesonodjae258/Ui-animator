@@ -98,9 +98,8 @@ export function LandingHero() {
       {/* Action CTA Buttons */}
       <div className="hero-actions flex flex-wrap items-center justify-center gap-3.5 mb-14">
         <Link href="/projects">
-          <Button variant="primary" size="lg" className="gap-2 shadow-sm">
+          <Button variant="primary" size="lg" className="shadow-sm">
             <span>Open projects dashboard</span>
-            <ArrowRight className="w-4 h-4" />
           </Button>
         </Link>
         <a href="#interactive-demo">

@@ -14,23 +14,33 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export function LandingFeaturesBento() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
-      gsap.from(".bento-card", {
-        opacity: 0,
-        y: 24,
-        stagger: 0.1,
-        duration: 0.7,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 85%",
-        },
-      });
+      gsap.fromTo(
+        ".bento-card",
+        { opacity: 0, y: 24 },
+        {
+          opacity: 1,
+          y: 0,
+          stagger: 0.08,
+          duration: 0.6,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
     },
     { scope: containerRef }
   );

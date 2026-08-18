@@ -5,6 +5,11 @@ import { Link2, MessageSquareText, Compass, Film, CheckCircle2 } from "lucide-re
 import { Badge } from "@/components/ui/badge";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 const STEPS = [
   {
@@ -50,17 +55,22 @@ export function LandingWorkflowSteps() {
 
   useGSAP(
     () => {
-      gsap.from(".workflow-step-card", {
-        opacity: 0,
-        y: 20,
-        stagger: 0.12,
-        duration: 0.7,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 80%",
-        },
-      });
+      gsap.fromTo(
+        ".workflow-step-card",
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          stagger: 0.1,
+          duration: 0.6,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
     },
     { scope: containerRef }
   );

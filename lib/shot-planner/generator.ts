@@ -1,31 +1,69 @@
 /* ── Shot Planner Generator ─────────────────────────────────── */
 
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { createServiceClient, createClient as createServerClient } from "@/lib/supabase/server";
 import { SHOT_PLANNER_SYSTEM_PROMPT } from "./prompt";
 import { validateSceneGraphResponse } from "./schema";
 import type { ShotPlan } from "./types";
 
-function getAnthropicClient(): Anthropic {
-  const apiKey =
+interface FramePayload {
+  id: string;
+  name: string;
+  order: number;
+  base64Image: string | null;
+}
+
+type ProviderClient =
+  | {
+      type: "nvidia";
+      client: OpenAI;
+      model: string;
+    }
+  | {
+      type: "anthropic";
+      client: Anthropic;
+      model: string;
+    };
+
+function getLLMClient(): ProviderClient {
+  const nvidiaKey = process.env.NVIDIA_API_KEY;
+  if (nvidiaKey && !nvidiaKey.startsWith("your-")) {
+    const baseURL = process.env.NVIDIA_BASE_URL?.trim() || "https://integrate.api.nvidia.com/v1";
+    const model = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.3-70b-instruct";
+
+    return {
+      type: "nvidia",
+      client: new OpenAI({
+        apiKey: nvidiaKey,
+        baseURL,
+      }),
+      model,
+    };
+  }
+
+  const anthropicKey =
     process.env.AGENTROUTER_API_KEY && !process.env.AGENTROUTER_API_KEY.startsWith("your-")
       ? process.env.AGENTROUTER_API_KEY
       : process.env.OPENROUTER_API_KEY && !process.env.OPENROUTER_API_KEY.startsWith("your-")
       ? process.env.OPENROUTER_API_KEY
       : process.env.ANTHROPIC_API_KEY;
 
-  if (!apiKey || apiKey.startsWith("your-")) {
-    throw new Error(
-      "No valid API key found (AGENTROUTER_API_KEY, OPENROUTER_API_KEY, or ANTHROPIC_API_KEY). Please configure it in .env.local",
-    );
+  if (anthropicKey && !anthropicKey.startsWith("your-")) {
+    const baseURL = process.env.AGENTROUTER_BASE_URL?.trim() || undefined;
+    return {
+      type: "anthropic",
+      client: new Anthropic({
+        apiKey: anthropicKey,
+        ...(baseURL ? { baseURL } : {}),
+      }),
+      model: "claude-3-5-sonnet-20241022",
+    };
   }
 
-  const baseURL = process.env.AGENTROUTER_BASE_URL?.trim() || undefined;
-
-  return new Anthropic({
-    apiKey,
-    ...(baseURL ? { baseURL } : {}),
-  });
+  throw new Error(
+    "No valid AI API key found. Please configure NVIDIA_API_KEY, ANTHROPIC_API_KEY, or OPENROUTER_API_KEY in .env.local",
+  );
 }
 
 export async function generateSceneGraph(projectId: string): Promise<{
@@ -54,7 +92,6 @@ export async function generateSceneGraph(projectId: string): Promise<{
   // Pre-validate brief length (~10 words min)
   const wordCount = projectBrief.split(/\s+/).filter(Boolean).length;
   if (!projectBrief || wordCount < 10) {
-    // Record error in scene_graphs table
     const { data: errRecord } = await supabase
       .from("scene_graphs")
       .upsert(
@@ -140,24 +177,12 @@ export async function generateSceneGraph(projectId: string): Promise<{
     throw new Error(`Failed to initialize scene graph record: ${sgInitError?.message}`);
   }
 
-  // 3. Prepare image & text payload for Anthropic API
   const validFrameIds = frames.map((f) => f.id);
-  const contentBlocks: Anthropic.Messages.ContentBlockParam[] = [];
 
-  contentBlocks.push({
-    type: "text",
-    text: `INPUT DATA:
-- project_brief: "${projectBrief}"
-- target_duration_seconds: ${durationTarget}
-- style_preset: "${stylePreset}"
-
-FRAMES LIST:`,
-  });
-
-  // Download thumbnails and attach as base64 images
+  // Download thumbnails and prepare frame data
+  const framePayloads: FramePayload[] = [];
   for (const frame of frames) {
     let base64Image: string | null = null;
-
     if (frame.thumbnail_storage_path) {
       try {
         const { data: fileData, error: downloadError } = await serviceClient.storage
@@ -173,148 +198,172 @@ FRAMES LIST:`,
       }
     }
 
-    contentBlocks.push({
-      type: "text",
-      text: `\nFrame ID: "${frame.id}" | Name: "${frame.name}" | Order: ${frame.order_in_flow}`,
+    framePayloads.push({
+      id: frame.id,
+      name: frame.name,
+      order: frame.order_in_flow,
+      base64Image,
     });
-
-    if (base64Image) {
-      contentBlocks.push({
-        type: "image",
-        source: {
-          type: "base64",
-          media_type: "image/png",
-          data: base64Image,
-        },
-      });
-    }
   }
 
-  contentBlocks.push({
-    type: "text",
-    text: "\nBuild the narrative scene graph now. Return ONLY raw valid JSON.",
-  });
-
-  const anthropic = getAnthropicClient();
-  const messages: Anthropic.Messages.MessageParam[] = [
-    {
-      role: "user",
-      content: contentBlocks,
-    },
-  ];
+  const provider = getLLMClient();
 
   try {
-    // 4. Call LLM (Attempt 1)
-    let response = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 4000,
-      temperature: 0.2,
-      system: SHOT_PLANNER_SYSTEM_PROMPT,
-      messages,
-    });
+    let rawText = "";
 
-    let rawText = extractMessageText(response);
-    let parsedJson = tryParseJson(rawText);
+    if (provider.type === "nvidia") {
+      const userContent: OpenAI.Chat.ChatCompletionContentPart[] = [
+        {
+          type: "text",
+          text: `INPUT DATA:\n- project_brief: "${projectBrief}"\n- target_duration_seconds: ${durationTarget}\n- style_preset: "${stylePreset}"\n\nFRAMES LIST:`,
+        },
+      ];
 
-    let validation = validateSceneGraphResponse(parsedJson, validFrameIds, durationTarget);
+      for (const fp of framePayloads) {
+        userContent.push({
+          type: "text",
+          text: `\nFrame ID: "${fp.id}" | Name: "${fp.name}" | Order: ${fp.order}`,
+        });
+        if (fp.base64Image) {
+          userContent.push({
+            type: "image_url",
+            image_url: {
+              url: `data:image/png;base64,${fp.base64Image}`,
+            },
+          });
+        }
+      }
 
-    // 5. Retry ONCE if invalid
-    if (!validation.valid && (!validation.data || !validation.data.error)) {
-      console.warn("Scene graph validation failed on attempt 1. Retrying once with error feedback:", validation.errors);
-
-      messages.push({
-        role: "assistant",
-        content: rawText,
+      userContent.push({
+        type: "text",
+        text: "\nBuild the narrative scene graph now. Return ONLY raw valid JSON.",
       });
 
-      messages.push({
-        role: "user",
-        content: `Your JSON output was invalid for the following reasons:\n- ${validation.errors.join(
-          "\n- ",
-        )}\n\nPlease correct these issues and output ONLY valid JSON matching the schema.`,
+      const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+        { role: "system", content: SHOT_PLANNER_SYSTEM_PROMPT },
+        { role: "user", content: userContent },
+      ];
+
+      const response = await provider.client.chat.completions.create({
+        model: provider.model,
+        messages,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
       });
 
-      response = await anthropic.messages.create({
-        model: "claude-3-5-sonnet-20241022",
+      rawText = response.choices[0]?.message?.content ?? "";
+
+      let parsedJson = tryParseJson(rawText);
+      let validation = validateSceneGraphResponse(parsedJson, validFrameIds, durationTarget);
+
+      // Retry once if invalid
+      if (!validation.valid && (!validation.data || !validation.data.error)) {
+        console.warn("NVIDIA NIM Scene graph validation failed on attempt 1. Retrying once:", validation.errors);
+
+        messages.push({
+          role: "assistant",
+          content: rawText,
+        });
+        messages.push({
+          role: "user",
+          content: `Your JSON output was invalid for the following reasons:\n- ${validation.errors.join(
+            "\n- ",
+          )}\n\nPlease correct these issues and output ONLY valid JSON matching the schema.`,
+        });
+
+        const retryResponse = await provider.client.chat.completions.create({
+          model: provider.model,
+          messages,
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+        });
+
+        rawText = retryResponse.choices[0]?.message?.content ?? "";
+        parsedJson = tryParseJson(rawText);
+        validation = validateSceneGraphResponse(parsedJson, validFrameIds, durationTarget);
+      }
+
+      return await handleValidationResult(supabase, sceneGraphRecord.id, validation);
+    } else {
+      // Anthropic Provider
+      const contentBlocks: Anthropic.Messages.ContentBlockParam[] = [
+        {
+          type: "text",
+          text: `INPUT DATA:\n- project_brief: "${projectBrief}"\n- target_duration_seconds: ${durationTarget}\n- style_preset: "${stylePreset}"\n\nFRAMES LIST:`,
+        },
+      ];
+
+      for (const fp of framePayloads) {
+        contentBlocks.push({
+          type: "text",
+          text: `\nFrame ID: "${fp.id}" | Name: "${fp.name}" | Order: ${fp.order}`,
+        });
+        if (fp.base64Image) {
+          contentBlocks.push({
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: "image/png",
+              data: fp.base64Image,
+            },
+          });
+        }
+      }
+
+      contentBlocks.push({
+        type: "text",
+        text: "\nBuild the narrative scene graph now. Return ONLY raw valid JSON.",
+      });
+
+      const messages: Anthropic.Messages.MessageParam[] = [
+        {
+          role: "user",
+          content: contentBlocks,
+        },
+      ];
+
+      let response = await provider.client.messages.create({
+        model: provider.model,
         max_tokens: 4000,
-        temperature: 0.1,
+        temperature: 0.2,
         system: SHOT_PLANNER_SYSTEM_PROMPT,
         messages,
       });
 
       rawText = extractMessageText(response);
-      parsedJson = tryParseJson(rawText);
-      validation = validateSceneGraphResponse(parsedJson, validFrameIds, durationTarget);
-    }
+      let parsedJson = tryParseJson(rawText);
+      let validation = validateSceneGraphResponse(parsedJson, validFrameIds, durationTarget);
 
-    // 6. Handle LLM error responses ("insufficient_brief" / "insufficient_content")
-    if (validation.valid && validation.data?.error) {
-      const errType = validation.data.error;
-      let userMsg = "The AI could not generate a scene graph.";
-      if (errType === "insufficient_brief") {
-        userMsg =
-          "The project brief is too vague to identify a core story. Please elaborate on what your product does and why it matters on the import screen.";
-      } else if (errType === "insufficient_content") {
-        userMsg =
-          "Not enough distinct content in selected frames. Please select more frames on the import screen.";
-      } else if (typeof errType === "string") {
-        userMsg = errType;
+      // Retry once if invalid
+      if (!validation.valid && (!validation.data || !validation.data.error)) {
+        console.warn("Anthropic Scene graph validation failed on attempt 1. Retrying once:", validation.errors);
+
+        messages.push({
+          role: "assistant",
+          content: rawText,
+        });
+        messages.push({
+          role: "user",
+          content: `Your JSON output was invalid for the following reasons:\n- ${validation.errors.join(
+            "\n- ",
+          )}\n\nPlease correct these issues and output ONLY valid JSON matching the schema.`,
+        });
+
+        response = await provider.client.messages.create({
+          model: provider.model,
+          max_tokens: 4000,
+          temperature: 0.1,
+          system: SHOT_PLANNER_SYSTEM_PROMPT,
+          messages,
+        });
+
+        rawText = extractMessageText(response);
+        parsedJson = tryParseJson(rawText);
+        validation = validateSceneGraphResponse(parsedJson, validFrameIds, durationTarget);
       }
 
-      await supabase
-        .from("scene_graphs")
-        .update({
-          status: "error",
-          error_message: userMsg,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", sceneGraphRecord.id);
-
-      return {
-        success: false,
-        sceneGraphId: sceneGraphRecord.id,
-        error: userMsg,
-      };
+      return await handleValidationResult(supabase, sceneGraphRecord.id, validation);
     }
-
-    if (!validation.valid || !validation.data || !validation.data.shots) {
-      const errorMsg = `Scene graph validation failed: ${validation.errors.join("; ")}`;
-      await supabase
-        .from("scene_graphs")
-        .update({
-          status: "error",
-          error_message: errorMsg,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", sceneGraphRecord.id);
-
-      return {
-        success: false,
-        sceneGraphId: sceneGraphRecord.id,
-        error: errorMsg,
-      };
-    }
-
-    // 7. Save valid shots to scene_graphs table
-    const finalShots: ShotPlan[] = validation.data.shots.map((s, idx) => ({
-      ...s,
-      shot_id: s.shot_id || `s${idx + 1}`,
-    }));
-
-    await supabase
-      .from("scene_graphs")
-      .update({
-        status: "ready",
-        error_message: null,
-        shots: finalShots,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", sceneGraphRecord.id);
-
-    return {
-      success: true,
-      sceneGraphId: sceneGraphRecord.id,
-    };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error("Shot planner generation exception:", err);
@@ -336,6 +385,79 @@ FRAMES LIST:`,
   }
 }
 
+async function handleValidationResult(
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
+  sceneGraphId: string,
+  validation: ReturnType<typeof validateSceneGraphResponse>,
+): Promise<{ success: boolean; sceneGraphId?: string; error?: string }> {
+  if (validation.valid && validation.data?.error) {
+    const errType = validation.data.error;
+    let userMsg = "The AI could not generate a scene graph.";
+    if (errType === "insufficient_brief") {
+      userMsg =
+        "The project brief is too vague to identify a core story. Please elaborate on what your product does and why it matters on the import screen.";
+    } else if (errType === "insufficient_content") {
+      userMsg =
+        "Not enough distinct content in selected frames. Please select more frames on the import screen.";
+    } else if (typeof errType === "string") {
+      userMsg = errType;
+    }
+
+    await supabase
+      .from("scene_graphs")
+      .update({
+        status: "error",
+        error_message: userMsg,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", sceneGraphId);
+
+    return {
+      success: false,
+      sceneGraphId,
+      error: userMsg,
+    };
+  }
+
+  if (!validation.valid || !validation.data || !validation.data.shots) {
+    const errorMsg = `Scene graph validation failed: ${validation.errors.join("; ")}`;
+    await supabase
+      .from("scene_graphs")
+      .update({
+        status: "error",
+        error_message: errorMsg,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", sceneGraphId);
+
+    return {
+      success: false,
+      sceneGraphId,
+      error: errorMsg,
+    };
+  }
+
+  const finalShots: ShotPlan[] = validation.data.shots.map((s, idx) => ({
+    ...s,
+    shot_id: s.shot_id || `s${idx + 1}`,
+  }));
+
+  await supabase
+    .from("scene_graphs")
+    .update({
+      status: "ready",
+      error_message: null,
+      shots: finalShots,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", sceneGraphId);
+
+  return {
+    success: true,
+    sceneGraphId,
+  };
+}
+
 function extractMessageText(message: Anthropic.Messages.Message): string {
   return message.content
     .filter((block): block is Anthropic.Messages.TextBlock => block.type === "text")
@@ -345,10 +467,10 @@ function extractMessageText(message: Anthropic.Messages.Message): string {
 
 function tryParseJson(text: string): unknown {
   try {
-    // Strip optional markdown block markers if present
     const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     return JSON.parse(cleaned);
   } catch {
     return null;
   }
 }
+

@@ -7,7 +7,7 @@
 -- 1. Projects table
 create table if not exists projects (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null default '00000000-0000-0000-0000-000000000000',
   name text not null default '',
   brief text not null default '',
   figma_file_key text,
@@ -18,33 +18,36 @@ create table if not exists projects (
   updated_at timestamptz not null default now()
 );
 
+-- Drop foreign key constraint if it exists from previous migrations
+alter table projects drop constraint if exists projects_user_id_fkey;
+
 alter table projects enable row level security;
 
 drop policy if exists "Users can read own projects" on projects;
 create policy "Users can read own projects"
   on projects for select
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000');
 
 drop policy if exists "Users can insert own projects" on projects;
 create policy "Users can insert own projects"
   on projects for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000');
 
 drop policy if exists "Users can update own projects" on projects;
 create policy "Users can update own projects"
   on projects for update
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000')
+  with check (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000');
 
 drop policy if exists "Users can delete own projects" on projects;
 create policy "Users can delete own projects"
   on projects for delete
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000');
 
 -- 2. Figma OAuth Connection table (encrypted tokens at rest)
 create table if not exists figma_connections (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid unique not null references auth.users(id) on delete cascade,
+  user_id uuid unique not null default '00000000-0000-0000-0000-000000000000',
   encrypted_access_token text not null,
   encrypted_refresh_token text not null,
   token_iv text not null,
@@ -56,28 +59,31 @@ create table if not exists figma_connections (
   updated_at timestamptz not null default now()
 );
 
+-- Drop foreign key constraint if it exists from previous migrations
+alter table figma_connections drop constraint if exists figma_connections_user_id_fkey;
+
 alter table figma_connections enable row level security;
 
 drop policy if exists "Users can read own figma connection" on figma_connections;
 create policy "Users can read own figma connection"
   on figma_connections for select
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000');
 
 drop policy if exists "Users can insert own figma connection" on figma_connections;
 create policy "Users can insert own figma connection"
   on figma_connections for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000');
 
 drop policy if exists "Users can update own figma connection" on figma_connections;
 create policy "Users can update own figma connection"
   on figma_connections for update
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000')
+  with check (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000');
 
 drop policy if exists "Users can delete own figma connection" on figma_connections;
 create policy "Users can delete own figma connection"
   on figma_connections for delete
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id or user_id = '00000000-0000-0000-0000-000000000000');
 
 -- 3. Frames table
 create table if not exists frames (

@@ -12,7 +12,7 @@ const STEPS = [
     icon: Link2,
     title: "Paste Figma prototype link",
     description:
-      "Connect your Figma account securely. Motioncast extracts the frame hierarchy, canvas order, and high-resolution layer vector assets.",
+      "Connect your Figma account securely. UI Animator extracts the frame hierarchy, canvas order, and high-resolution layer vector assets.",
     badge: "Figma REST API",
     snippet: "https://figma.com/proto/...",
   },

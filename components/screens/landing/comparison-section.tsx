@@ -14,13 +14,13 @@ export function LandingComparisonSection() {
       {/* Section Header */}
       <div className="flex flex-col items-center text-center mb-12">
         <Badge variant="outline" className="mb-3 font-mono text-[11px]">
-          The Motioncast difference
+          The UI Animator difference
         </Badge>
         <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-text-primary mb-3">
           Why traditional screen tours fall flat
         </h2>
         <p className="text-sm sm:text-base text-text-muted max-w-xl">
-          Screen recordings show where buttons are located. Motioncast tells why your product matters.
+          Screen recordings show where buttons are located. UI Animator tells why your product matters.
         </p>
       </div>
 
@@ -66,7 +66,7 @@ export function LandingComparisonSection() {
           </div>
         </div>
 
-        {/* Card: Motioncast Narrative Graphic */}
+        {/* Card: UI Animator Narrative Graphic */}
         <div className="p-6 sm:p-8 rounded-xl border border-border-strong bg-surface-1/90 flex flex-col justify-between relative shadow-sm">
           <div className="absolute top-4 right-4">
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-medium">
@@ -78,7 +78,7 @@ export function LandingComparisonSection() {
           <div>
             <div className="flex items-center gap-2 mb-4 text-xs font-mono text-emerald-500">
               <Check className="w-4 h-4" />
-              <span>Motioncast narrative graphic</span>
+              <span>UI Animator narrative graphic</span>
             </div>
             <h3 className="text-lg font-bold text-text-primary mb-3">
               Cinematic storytelling with intentional beats

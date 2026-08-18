@@ -160,7 +160,7 @@ export function InteractiveStage() {
           See the narrative engine in action
         </h2>
         <p className="text-sm sm:text-base text-text-muted max-w-xl">
-          Unlike ordinary screen recorders, Motioncast orchestrates camera choreography, visual focus,
+          Unlike ordinary screen recorders, UI Animator orchestrates camera choreography, visual focus,
           and precise pacing around your story.
         </p>
       </div>

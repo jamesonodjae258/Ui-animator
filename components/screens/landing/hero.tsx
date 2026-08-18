@@ -90,7 +90,7 @@ export function LandingHero() {
 
       {/* Description */}
       <p className="hero-description text-base sm:text-lg text-text-muted max-w-2xl mb-9 leading-relaxed">
-        Paste your Figma prototype and a 2-sentence brief. Motioncast extracts frame structures,
+        Paste your Figma prototype and a 2-sentence brief. UI Animator extracts frame structures,
         plans an intentional storytelling arc (hook → problem → reveal → payoff), and renders
         deterministic 60fps social videos with Remotion.
       </p>

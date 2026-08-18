@@ -11,14 +11,14 @@ interface FAQItem {
 
 const FAQS: FAQItem[] = [
   {
-    question: "How does Motioncast connect to my Figma prototype?",
+    question: "How does UI Animator connect to my Figma prototype?",
     answer:
-      "You connect via official Figma OAuth. Motioncast reads the document frame hierarchy, vector layers, and frame ordering using the Figma REST API. Your OAuth tokens are encrypted at rest with AES-256-GCM and never exposed to the client.",
+      "You connect via official Figma OAuth. UI Animator reads the document frame hierarchy, vector layers, and frame ordering using the Figma REST API. Your OAuth tokens are encrypted at rest with AES-256-GCM and never exposed to the client.",
   },
   {
     question: "Why does the AI create a narrative arc instead of a standard screen sequence?",
     answer:
-      "Standard screen tours suffer from low retention because they simply walk through menus. Motioncast's shot-planner structures an emotional narrative arc (hook statement → problem tension → core reveal → payoff resolution) with calculated camera zooms and concise captions.",
+      "Standard screen tours suffer from low retention because they simply walk through menus. UI Animator's shot-planner structures an emotional narrative arc (hook statement → problem tension → core reveal → payoff resolution) with calculated camera zooms and concise captions.",
   },
   {
     question: "How is the final video rendered?",

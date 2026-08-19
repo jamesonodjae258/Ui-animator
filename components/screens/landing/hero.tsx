@@ -70,21 +70,14 @@ export function LandingHero() {
       {/* Background subtle radial glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-accent/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      {/* Pill badges */}
-      <div className="hero-pill mb-6 flex flex-wrap items-center justify-center gap-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-1 border border-border text-xs text-text-secondary">
+      {/* Pill badge */}
+      <div className="hero-pill mb-6">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-1 border border-border text-xs text-text-secondary hover:border-border-strong transition-colors cursor-default">
           <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="font-mono text-[11px] text-text-muted">v1.0 Classic</span>
+          <span className="font-mono text-[11px] text-text-muted">AI Shot Planner</span>
           <span className="text-border-strong">/</span>
-          <span>Figma to narrative video engine</span>
+          <span>Figma prototype to motion story</span>
         </div>
-        <Link
-          href="/v2"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-xs text-accent hover:bg-accent/20 transition-all font-medium"
-        >
-          <span>Preview v2 Editorial Layout</span>
-          <span aria-hidden="true">↗</span>
-        </Link>
       </div>
 
       {/* Headline */}

@@ -53,6 +53,7 @@ async function getBundleLocation(): Promise<string> {
 }
 
 async function processNextJob() {
+  let currentJobId: string | null = null;
   try {
     // 1. Clean up stale jobs stuck in 'rendering' for > 10 mins
     const tenMinsAgo = new Date(Date.now() - STALE_TIMEOUT_MS).toISOString();
@@ -83,6 +84,8 @@ async function processNextJob() {
     if (!job) {
       return; // No queued jobs
     }
+
+    currentJobId = job.id;
 
     console.log(`\n🎬 Found queued render job: ${job.id} (Project: ${job.project_id})`);
 
@@ -239,10 +242,24 @@ async function processNextJob() {
       })
       .eq("id", job.id);
 
-    console.log(`🎉 Job ${job.id} COMPLETED successfully! Output URL: ${publicUrl}\n`);
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error("❌ Render job execution failed:", errorMsg);
+
+    if (currentJobId) {
+      try {
+        await supabase
+          .from("render_jobs")
+          .update({
+            status: "failed",
+            error_message: errorMsg,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", currentJobId);
+      } catch (updateErr) {
+        console.error("Failed to mark job as failed in Supabase:", updateErr);
+      }
+    }
   }
 }
 

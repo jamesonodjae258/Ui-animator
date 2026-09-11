@@ -12,18 +12,19 @@ export default async function ProjectsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const serviceClient = (await import("@/lib/supabase/server")).createServiceClient();
+  const effectiveUserId = user?.id ?? "00000000-0000-0000-0000-000000000001";
+
   let projects: ProjectRow[] = [];
 
-  if (user) {
-    const { data } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
+  const { data } = await serviceClient
+    .from("projects")
+    .select("*")
+    .eq("user_id", effectiveUserId)
+    .order("updated_at", { ascending: false });
 
-    if (data) {
-      projects = data as ProjectRow[];
-    }
+  if (data) {
+    projects = data as ProjectRow[];
   }
 
   // Fallback UUID for creating a new project

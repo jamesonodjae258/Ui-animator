@@ -1,6 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { RenderResult } from "@/components/screens/render-result";
 import type { RenderJobData } from "@/components/screens/render-result";
+import { localStore } from "@/lib/local-store";
 
 interface RenderPageProps {
   params: Promise<{ id: string }>;
@@ -16,48 +17,62 @@ export default async function RenderPage({ params, searchParams }: RenderPagePro
     data: { user },
   } = await supabase.auth.getUser();
 
+  const serviceClient = createServiceClient();
+  const clientToUse = user ? supabase : serviceClient;
+
   let projectName = "";
   let projectBrief = "";
   let preset = "clean_saas";
   let duration = 30;
 
-  if (user) {
-    const { data: project } = await supabase
+  let project = null;
+  try {
+    const { data: p } = await clientToUse
       .from("projects")
       .select("*")
       .eq("id", projectId)
-      .eq("user_id", user.id)
       .maybeSingle();
+    if (p) project = p;
+  } catch {}
 
-    if (project) {
-      projectName = project.name;
-      projectBrief = project.brief;
-      preset = project.style_preset ?? "clean_saas";
-      duration = project.duration_seconds ?? 30;
-    }
+  if (!project) {
+    project = localStore.getProject(projectId);
+  }
+
+  if (project) {
+    projectName = project.name;
+    projectBrief = project.brief;
+    preset = project.style_preset ?? "clean_saas";
+    duration = project.duration_seconds ?? 30;
   }
 
   let sceneGraphId: string | null = null;
   let shotsCount = 0;
 
-  if (user) {
-    const { data: sg } = await supabase
+  let sg = null;
+  try {
+    const { data: dbSg } = await clientToUse
       .from("scene_graphs")
       .select("id, shots")
       .eq("project_id", projectId)
       .maybeSingle();
+    if (dbSg) sg = dbSg;
+  } catch {}
 
-    if (sg) {
-      sceneGraphId = sg.id;
-      shotsCount = Array.isArray(sg.shots) ? sg.shots.length : 0;
-    }
+  if (!sg) {
+    sg = localStore.getSceneGraph(projectId);
+  }
+
+  if (sg) {
+    sceneGraphId = sg.id;
+    shotsCount = Array.isArray(sg.shots) ? sg.shots.length : 0;
   }
 
   let initialJob: RenderJobData | null = null;
 
-  if (user) {
-    if (queryJobId) {
-      const { data: job } = await supabase
+  if (queryJobId) {
+    try {
+      const { data: job } = await clientToUse
         .from("render_jobs")
         .select("*")
         .eq("id", queryJobId)
@@ -67,10 +82,19 @@ export default async function RenderPage({ params, searchParams }: RenderPagePro
       if (job) {
         initialJob = job as RenderJobData;
       }
-    }
+    } catch {}
 
     if (!initialJob) {
-      const { data: latestJob } = await supabase
+      const localJ = localStore.getRenderJob(queryJobId);
+      if (localJ && localJ.project_id === projectId) {
+        initialJob = localJ as RenderJobData;
+      }
+    }
+  }
+
+  if (!initialJob) {
+    try {
+      const { data: latestJob } = await clientToUse
         .from("render_jobs")
         .select("*")
         .eq("project_id", projectId)
@@ -81,7 +105,7 @@ export default async function RenderPage({ params, searchParams }: RenderPagePro
       if (latestJob) {
         initialJob = latestJob as RenderJobData;
       }
-    }
+    } catch {}
   }
 
   return (

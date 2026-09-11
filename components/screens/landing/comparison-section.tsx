@@ -10,7 +10,7 @@ export function LandingComparisonSection() {
   const [selectedView, setSelectedView] = useState<"narrative" | "generic">("narrative");
 
   return (
-    <section className="py-16 md:py-24 px-6 max-w-6xl mx-auto">
+    <section id="comparison" className="py-16 md:py-24 px-6 max-w-6xl mx-auto">
       {/* Section Header */}
       <div className="flex flex-col items-center text-center mb-12">
         <Badge variant="outline" className="mb-3 font-mono text-[11px]">

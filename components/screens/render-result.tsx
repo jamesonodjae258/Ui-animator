@@ -143,9 +143,31 @@ export function RenderResult({
             <span className="font-medium text-text-primary">{progress}%</span>
           </div>
 
-          <p className="text-xs text-text-muted">
-            {status === "queued" ? "Worker picking up job…" : "Rendering frames via Remotion worker…"}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-text-muted">
+              {status === "queued" ? "Worker picking up job…" : "Rendering frames via Remotion worker…"}
+            </p>
+            {status === "queued" && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!job?.id) return;
+                  try {
+                    const res = await fetch(`/api/render/process/${job.id}`, { method: "POST" });
+                    const data = await res.json();
+                    if (data.status === "complete") {
+                      setJob((prev) => (prev ? { ...prev, status: "complete", output_video_url: data.output_video_url } : prev));
+                    }
+                  } catch (err) {
+                    console.error("Accelerate error:", err);
+                  }
+                }}
+                className="text-[11px] font-mono text-accent hover:underline cursor-pointer"
+              >
+                Fast-process now →
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-10 space-y-0 text-left">

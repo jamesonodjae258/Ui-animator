@@ -189,6 +189,47 @@ export function ImportForm({
     }
   }, [figmaUrl, projectId, brief]);
 
+  const [isSampleLoading, setIsSampleLoading] = useState(false);
+
+  const handleLoadSample = useCallback(async () => {
+    setIsSampleLoading(true);
+    setUrlError(null);
+    setBriefError(null);
+
+    try {
+      const response = await fetch("/api/projects/sample", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setImportState({
+          status: "error",
+          message: data.error ?? "Failed to load sample prototype",
+        });
+        return;
+      }
+
+      setFrames(data.frames);
+      setBrief(data.brief);
+      setFigmaUrl("https://figma.com/design/sample-key/Acme-Analytics-Prototype");
+      setImportState({
+        status: "success",
+        frameCount: data.frameCount,
+      });
+    } catch {
+      setImportState({
+        status: "error",
+        message: "Failed to load sample prototype. Please try again.",
+      });
+    } finally {
+      setIsSampleLoading(false);
+    }
+  }, [projectId]);
+
   const handleGenerateSceneGraph = useCallback(async () => {
     const trimmedBrief = brief.trim();
     const wordCount = trimmedBrief ? trimmedBrief.split(/\s+/).filter(Boolean).length : 0;
@@ -361,6 +402,24 @@ export function ImportForm({
             ) : (
               "Import frames"
             )}
+          </Button>
+        </div>
+
+        {/* Quick Sample Prototype Button */}
+        <div className="mt-4 pt-3 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+          <div className="flex items-center gap-1.5 text-text-muted">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <span>No Figma link handy? Test with our verified 6-frame sample</span>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleLoadSample}
+            disabled={isSampleLoading || importState.status === "importing"}
+            className="text-xs shrink-0"
+          >
+            {isSampleLoading ? "Loading sample frames..." : "Load sample prototype"}
           </Button>
         </div>
 

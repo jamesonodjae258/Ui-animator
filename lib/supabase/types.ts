@@ -61,3 +61,29 @@ export interface FrameInsert {
   thumbnail_storage_path?: string;
   included?: boolean;
 }
+
+/** Row type for the `scene_graphs` table. */
+export interface SceneGraphRow {
+  id: string;
+  project_id: string;
+  video_duration_target: number;
+  style_preset: string;
+  shots: unknown[];
+  status: "generating" | "ready" | "error";
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Row type for the `render_jobs` table. */
+export interface RenderJobRow {
+  id: string;
+  project_id: string;
+  scene_graph_id: string;
+  status: "queued" | "rendering" | "complete" | "error";
+  output_video_url: string | null;
+  error_message: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}

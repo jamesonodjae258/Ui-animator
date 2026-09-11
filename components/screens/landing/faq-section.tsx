@@ -45,7 +45,7 @@ export function LandingFAQSection() {
   };
 
   return (
-    <section className="py-16 md:py-24 px-6 max-w-4xl mx-auto">
+    <section id="faq" className="py-16 md:py-24 px-6 max-w-4xl mx-auto">
       {/* Section Header */}
       <div className="flex flex-col items-center text-center mb-12">
         <Badge variant="outline" className="mb-3 font-mono text-[11px]">

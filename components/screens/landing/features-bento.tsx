@@ -46,7 +46,7 @@ export function LandingFeaturesBento() {
   );
 
   return (
-    <section ref={containerRef} className="py-16 md:py-24 px-6 max-w-6xl mx-auto">
+    <section id="features" ref={containerRef} className="py-16 md:py-24 px-6 max-w-6xl mx-auto">
       {/* Section Header */}
       <div className="flex flex-col items-center text-center mb-14">
         <Badge variant="outline" className="mb-3 font-mono text-[11px]">
@@ -63,7 +63,7 @@ export function LandingFeaturesBento() {
       {/* Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Narrative Beat Engine (Span 2 Cols) */}
-        <div className="bento-card md:col-span-2 p-6 sm:p-7 rounded-xl border border-border bg-surface-1/70 flex flex-col justify-between relative overflow-hidden group hover:border-border-strong transition-all">
+        <div className="bento-card md:col-span-2 p-5 sm:p-7 rounded-xl border border-border bg-surface-1/70 flex flex-col justify-between relative overflow-hidden group hover:border-border-strong transition-all">
           <div className="space-y-3 z-10 max-w-lg">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-surface-0 border border-border text-xs font-medium text-text-primary">
               <Sparkles className="w-3.5 h-3.5" />
@@ -78,27 +78,27 @@ export function LandingFeaturesBento() {
             </p>
           </div>
 
-          {/* Interactive visual arc */}
-          <div className="mt-8 pt-6 border-t border-border/80 grid grid-cols-5 gap-2 text-center">
-            <div className="p-2.5 rounded-lg bg-surface-0 border border-border">
+          {/* Interactive visual arc: horizontally scrollable on small screens, 5 cols on sm+ */}
+          <div className="mt-8 pt-6 border-t border-border/80 flex overflow-x-auto sm:grid sm:grid-cols-5 gap-2 text-center no-scrollbar pb-1 sm:pb-0">
+            <div className="min-w-[95px] sm:min-w-0 flex-1 p-2.5 rounded-lg bg-surface-0 border border-border shrink-0">
               <div className="text-[10px] font-mono text-amber-500 uppercase font-semibold">Hook</div>
-              <div className="text-[11px] text-text-primary font-medium mt-0.5">Stop scroll</div>
+              <div className="text-[11px] text-text-primary font-medium mt-0.5 whitespace-nowrap">Stop scroll</div>
             </div>
-            <div className="p-2.5 rounded-lg bg-surface-0 border border-border">
+            <div className="min-w-[95px] sm:min-w-0 flex-1 p-2.5 rounded-lg bg-surface-0 border border-border shrink-0">
               <div className="text-[10px] font-mono text-text-muted uppercase font-semibold">Problem</div>
-              <div className="text-[11px] text-text-primary font-medium mt-0.5">Pain point</div>
+              <div className="text-[11px] text-text-primary font-medium mt-0.5 whitespace-nowrap">Pain point</div>
             </div>
-            <div className="p-2.5 rounded-lg bg-surface-0 border border-border">
+            <div className="min-w-[95px] sm:min-w-0 flex-1 p-2.5 rounded-lg bg-surface-0 border border-border shrink-0">
               <div className="text-[10px] font-mono text-text-secondary uppercase font-semibold">Reveal</div>
-              <div className="text-[11px] text-text-primary font-medium mt-0.5">Core flow</div>
+              <div className="text-[11px] text-text-primary font-medium mt-0.5 whitespace-nowrap">Core flow</div>
             </div>
-            <div className="p-2.5 rounded-lg bg-surface-0 border border-border">
+            <div className="min-w-[95px] sm:min-w-0 flex-1 p-2.5 rounded-lg bg-surface-0 border border-border shrink-0">
               <div className="text-[10px] font-mono text-text-secondary uppercase font-semibold">Highlight</div>
-              <div className="text-[11px] text-text-primary font-medium mt-0.5">Micro-crop</div>
+              <div className="text-[11px] text-text-primary font-medium mt-0.5 whitespace-nowrap">Micro-crop</div>
             </div>
-            <div className="p-2.5 rounded-lg bg-surface-0 border border-border">
+            <div className="min-w-[95px] sm:min-w-0 flex-1 p-2.5 rounded-lg bg-surface-0 border border-border shrink-0">
               <div className="text-[10px] font-mono text-emerald-500 uppercase font-semibold">Payoff</div>
-              <div className="text-[11px] text-text-primary font-medium mt-0.5">Resolution</div>
+              <div className="text-[11px] text-text-primary font-medium mt-0.5 whitespace-nowrap">Resolution</div>
             </div>
           </div>
         </div>

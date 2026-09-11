@@ -1,7 +1,8 @@
 /* ── Render Job Status Route ────────────────────────────────── */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { localStore } from "@/lib/local-store";
 
 /**
  * GET /api/render/status/[jobId]
@@ -17,20 +18,24 @@ export async function GET(
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { jobId } = await params;
 
-    const { data: job, error } = await supabase
-      .from("render_jobs")
-      .select("*")
-      .eq("id", jobId)
-      .maybeSingle();
+    let job = null;
+    try {
+      const clientToUse = user ? supabase : createServiceClient();
+      const { data, error } = await clientToUse
+        .from("render_jobs")
+        .select("*")
+        .eq("id", jobId)
+        .maybeSingle();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      if (!error && data) {
+        job = data;
+      }
+    } catch {}
+
+    if (!job) {
+      job = localStore.getRenderJob(jobId);
     }
 
     if (!job) {

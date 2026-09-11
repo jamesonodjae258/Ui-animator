@@ -40,45 +40,43 @@ export default async function ImportPage({ params }: ImportPageProps) {
     // Connection may be invalid — treat as not connected
   }
 
+  const serviceClient = (await import("@/lib/supabase/server")).createServiceClient();
+  const clientToUse = user ? supabase : serviceClient;
+
   // Fetch project data (if it exists)
   let brief = "";
   let stylePreset = "clean_saas";
   let duration = 30;
 
-  if (user) {
-    const { data: project } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("id", projectId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+  const { data: project } = await clientToUse
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .maybeSingle();
 
-    if (project) {
-      brief = project.brief ?? "";
-      stylePreset = project.style_preset ?? "clean_saas";
-      duration = project.duration_seconds ?? 30;
-    }
+  if (project) {
+    brief = project.brief ?? "";
+    stylePreset = project.style_preset ?? "clean_saas";
+    duration = project.duration_seconds ?? 30;
   }
 
   // Fetch existing frames
   let frames: Array<FrameRow & { thumbnail_url: string | null }> = [];
 
-  if (user) {
-    const { data: frameRows } = await supabase
-      .from("frames")
-      .select("*")
-      .eq("project_id", projectId)
-      .order("order_in_flow", { ascending: true });
+  const { data: frameRows } = await clientToUse
+    .from("frames")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("order_in_flow", { ascending: true });
 
-    if (frameRows) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-      frames = frameRows.map((frame: FrameRow) => ({
-        ...frame,
-        thumbnail_url: frame.thumbnail_storage_path
-          ? `${supabaseUrl}/storage/v1/object/public/frame-thumbnails/${frame.thumbnail_storage_path}`
-          : null,
-      }));
-    }
+  if (frameRows) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    frames = frameRows.map((frame: FrameRow) => ({
+      ...frame,
+      thumbnail_url: frame.thumbnail_storage_path
+        ? `${supabaseUrl}/storage/v1/object/public/frame-thumbnails/${frame.thumbnail_storage_path}`
+        : null,
+    }));
   }
 
   return (

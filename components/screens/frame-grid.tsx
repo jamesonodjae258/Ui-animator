@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { FrameRow } from "@/lib/supabase/types";
 
@@ -17,6 +17,10 @@ interface FrameGridProps {
  */
 export function FrameGrid({ initialFrames, supabaseUrl }: FrameGridProps) {
   const [frames, setFrames] = useState(initialFrames);
+
+  useEffect(() => {
+    setFrames(initialFrames);
+  }, [initialFrames]);
 
   const toggleIncluded = useCallback(
     async (frameId: string) => {

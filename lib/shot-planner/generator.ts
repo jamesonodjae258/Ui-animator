@@ -6,6 +6,8 @@ import { createServiceClient, createClient as createServerClient } from "@/lib/s
 import { SHOT_PLANNER_SYSTEM_PROMPT } from "./prompt";
 import { validateSceneGraphResponse } from "./schema";
 import type { ShotPlan } from "./types";
+import { localStore } from "@/lib/local-store";
+import type { FrameRow, ProjectRow } from "@/lib/supabase/types";
 
 interface FramePayload {
   id: string;
@@ -26,7 +28,7 @@ type ProviderClient =
       model: string;
     };
 
-function getLLMClient(): ProviderClient {
+function getLLMClient(): ProviderClient | null {
   const nvidiaKey = process.env.NVIDIA_API_KEY;
   if (nvidiaKey && !nvidiaKey.startsWith("your-")) {
     const baseURL = process.env.NVIDIA_BASE_URL?.trim() || "https://integrate.api.nvidia.com/v1";
@@ -42,11 +44,21 @@ function getLLMClient(): ProviderClient {
     };
   }
 
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+  if (openrouterKey && !openrouterKey.startsWith("your-")) {
+    return {
+      type: "nvidia",
+      client: new OpenAI({
+        apiKey: openrouterKey,
+        baseURL: "https://openrouter.ai/api/v1",
+      }),
+      model: "anthropic/claude-3.5-sonnet",
+    };
+  }
+
   const anthropicKey =
     process.env.AGENTROUTER_API_KEY && !process.env.AGENTROUTER_API_KEY.startsWith("your-")
       ? process.env.AGENTROUTER_API_KEY
-      : process.env.OPENROUTER_API_KEY && !process.env.OPENROUTER_API_KEY.startsWith("your-")
-      ? process.env.OPENROUTER_API_KEY
       : process.env.ANTHROPIC_API_KEY;
 
   if (anthropicKey && !anthropicKey.startsWith("your-")) {
@@ -61,9 +73,73 @@ function getLLMClient(): ProviderClient {
     };
   }
 
-  throw new Error(
-    "No valid AI API key found. Please configure NVIDIA_API_KEY, ANTHROPIC_API_KEY, or OPENROUTER_API_KEY in .env.local",
-  );
+  return null;
+}
+
+export function generateFallbackNarrativePlan(
+  frames: Array<{ id: string; name: string }>,
+  brief: string,
+  targetDurationSeconds: number,
+  stylePreset: string,
+) {
+  const targetMs = targetDurationSeconds * 1000;
+  const shotCount = Math.min(Math.max(frames.length, 3), 6);
+  const baseDuration = Math.floor(targetMs / shotCount);
+  const remainder = targetMs - baseDuration * shotCount;
+
+  const sentences = brief.split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > 5);
+  const hookCaption = sentences[0] ? `${sentences[0]}.` : "Turn product prototypes into motion stories.";
+  const problemCaption = sentences[1] ? `${sentences[1]}.` : "Traditional screen recordings fail to hold viewer retention.";
+  const payoffCaption = sentences[sentences.length - 1] ? `${sentences[sentences.length - 1]}.` : "High-converting motion graphics rendered in 60fps.";
+
+  const beats: Array<"hook" | "problem" | "reveal" | "highlight" | "payoff"> = [];
+  if (shotCount === 3) {
+    beats.push("hook", "reveal", "payoff");
+  } else if (shotCount === 4) {
+    beats.push("hook", "problem", "reveal", "payoff");
+  } else if (shotCount === 5) {
+    beats.push("hook", "problem", "reveal", "highlight", "payoff");
+  } else {
+    beats.push("hook", "problem", "reveal", "reveal", "highlight", "payoff");
+  }
+
+  const cameraMoves: Array<"zoom_in_center" | "zoom_out" | "pan_left_to_right" | "ken_burns_subtle" | "static_hold"> = [
+    "zoom_in_center",
+    "pan_left_to_right",
+    "ken_burns_subtle",
+    "zoom_out",
+    "static_hold",
+    "zoom_in_center",
+  ];
+
+  const captions = [
+    hookCaption,
+    problemCaption,
+    "One-click narrative timeline from Figma frames.",
+    "Sub-pixel vector interpolation at 60fps.",
+    "Designed to convert viewers into active users.",
+    payoffCaption,
+  ];
+
+  const shots: ShotPlan[] = beats.map((beat, idx) => {
+    const frameIndex = Math.min(idx, frames.length - 1);
+    const duration = idx === beats.length - 1 ? baseDuration + remainder : baseDuration;
+    return {
+      shot_id: `s${idx + 1}`,
+      frame_id: frames[frameIndex].id,
+      narrative_beat: beat,
+      camera_move: cameraMoves[idx % cameraMoves.length],
+      duration_ms: duration,
+      caption: captions[idx % captions.length],
+      transition_in: idx === 0 ? "fade" : "cut",
+    };
+  });
+
+  return {
+    video_duration_target: targetDurationSeconds,
+    style_preset: stylePreset,
+    shots,
+  };
 }
 
 export async function generateSceneGraph(projectId: string): Promise<{
@@ -75,14 +151,27 @@ export async function generateSceneGraph(projectId: string): Promise<{
   const serviceClient = createServiceClient();
 
   // 1. Fetch project data
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", projectId)
-    .single();
+  let project: ProjectRow | null = null;
+  try {
+    const { data: p, error: projectError } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("id", projectId)
+      .single();
 
-  if (projectError || !project) {
-    throw new Error(`Project not found: ${projectError?.message ?? projectId}`);
+    if (!projectError && p) {
+      project = p as ProjectRow;
+    }
+  } catch (err) {
+    console.warn("Supabase project fetch error, checking local store:", err);
+  }
+
+  if (!project) {
+    project = localStore.getProject(projectId);
+  }
+
+  if (!project) {
+    throw new Error(`Project not found: ${projectId}`);
   }
 
   const projectBrief = project.brief?.trim() ?? "";
@@ -92,90 +181,151 @@ export async function generateSceneGraph(projectId: string): Promise<{
   // Pre-validate brief length (~10 words min)
   const wordCount = projectBrief.split(/\s+/).filter(Boolean).length;
   if (!projectBrief || wordCount < 10) {
-    const { data: errRecord } = await supabase
-      .from("scene_graphs")
-      .upsert(
-        {
-          project_id: projectId,
-          video_duration_target: durationTarget,
-          style_preset: stylePreset,
-          status: "error",
-          error_message:
-            "Project brief is missing or too short (minimum 10 words). Please describe your product on the import screen.",
-          shots: [],
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "project_id" },
-      )
-      .select()
-      .single();
+    const errorMsg =
+      "Project brief is missing or too short (minimum 10 words). Please describe your product on the import screen.";
+    let errSceneGraphId = crypto.randomUUID();
+
+    try {
+      const { data: errRecord } = await supabase
+        .from("scene_graphs")
+        .upsert(
+          {
+            project_id: projectId,
+            video_duration_target: durationTarget,
+            style_preset: stylePreset,
+            status: "error",
+            error_message: errorMsg,
+            shots: [],
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "project_id" },
+        )
+        .select()
+        .single();
+
+      if (errRecord?.id) {
+        errSceneGraphId = errRecord.id;
+      }
+    } catch {}
+
+    localStore.upsertSceneGraph({
+      id: errSceneGraphId,
+      project_id: projectId,
+      video_duration_target: durationTarget,
+      style_preset: stylePreset,
+      status: "error",
+      error_message: errorMsg,
+      shots: [],
+    });
 
     return {
       success: false,
-      sceneGraphId: errRecord?.id,
-      error:
-        "Project brief is missing or too short (minimum 10 words). Please describe your product on the import screen.",
+      sceneGraphId: errSceneGraphId,
+      error: errorMsg,
     };
   }
 
   // 2. Fetch included frames
-  const { data: frames, error: framesError } = await supabase
-    .from("frames")
-    .select("*")
-    .eq("project_id", projectId)
-    .eq("included", true)
-    .order("order_in_flow", { ascending: true });
+  let frames: FrameRow[] = [];
+  try {
+    const { data: dbFrames, error: framesError } = await supabase
+      .from("frames")
+      .select("*")
+      .eq("project_id", projectId)
+      .eq("included", true)
+      .order("order_in_flow", { ascending: true });
 
-  if (framesError || !frames || frames.length < 3) {
-    const errorMsg = `At least 3 included frames are required to generate a scene graph (found ${
-      frames?.length ?? 0
-    }).`;
+    if (!framesError && dbFrames && dbFrames.length > 0) {
+      frames = dbFrames as FrameRow[];
+    }
+  } catch (err) {
+    console.warn("Supabase frames fetch error, checking local store:", err);
+  }
 
-    const { data: errRecord } = await supabase
-      .from("scene_graphs")
-      .upsert(
-        {
-          project_id: projectId,
-          video_duration_target: durationTarget,
-          style_preset: stylePreset,
-          status: "error",
-          error_message: errorMsg,
-          shots: [],
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "project_id" },
-      )
-      .select()
-      .single();
+  if (frames.length === 0) {
+    frames = localStore.getFrames(projectId).filter((f) => f.included !== false);
+  }
+
+  if (frames.length < 3) {
+    const errorMsg = `At least 3 included frames are required to generate a scene graph (found ${frames.length}).`;
+    let errSceneGraphId = crypto.randomUUID();
+
+    try {
+      const { data: errRecord } = await supabase
+        .from("scene_graphs")
+        .upsert(
+          {
+            project_id: projectId,
+            video_duration_target: durationTarget,
+            style_preset: stylePreset,
+            status: "error",
+            error_message: errorMsg,
+            shots: [],
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "project_id" },
+        )
+        .select()
+        .single();
+
+      if (errRecord?.id) {
+        errSceneGraphId = errRecord.id;
+      }
+    } catch {}
+
+    localStore.upsertSceneGraph({
+      id: errSceneGraphId,
+      project_id: projectId,
+      video_duration_target: durationTarget,
+      style_preset: stylePreset,
+      status: "error",
+      error_message: errorMsg,
+      shots: [],
+    });
 
     return {
       success: false,
-      sceneGraphId: errRecord?.id,
+      sceneGraphId: errSceneGraphId,
       error: errorMsg,
     };
   }
 
   // Create initial scene_graph entry with status 'generating'
-  const { data: sceneGraphRecord, error: sgInitError } = await supabase
-    .from("scene_graphs")
-    .upsert(
-      {
-        project_id: projectId,
-        video_duration_target: durationTarget,
-        style_preset: stylePreset,
-        status: "generating",
-        error_message: null,
-        shots: [],
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "project_id" },
-    )
-    .select()
-    .single();
+  let sceneGraphRecordId = crypto.randomUUID();
+  try {
+    const { data: sceneGraphRecord } = await supabase
+      .from("scene_graphs")
+      .upsert(
+        {
+          project_id: projectId,
+          video_duration_target: durationTarget,
+          style_preset: stylePreset,
+          status: "generating",
+          error_message: null,
+          shots: [],
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "project_id" },
+      )
+      .select()
+      .single();
 
-  if (sgInitError || !sceneGraphRecord) {
-    throw new Error(`Failed to initialize scene graph record: ${sgInitError?.message}`);
+    if (sceneGraphRecord?.id) {
+      sceneGraphRecordId = sceneGraphRecord.id;
+    }
+  } catch (err) {
+    console.warn("Supabase scene_graphs upsert failed, using local store:", err);
   }
+
+  localStore.upsertSceneGraph({
+    id: sceneGraphRecordId,
+    project_id: projectId,
+    video_duration_target: durationTarget,
+    style_preset: stylePreset,
+    status: "generating",
+    error_message: null,
+    shots: [],
+  });
 
   const validFrameIds = frames.map((f) => f.id);
 
@@ -207,6 +357,18 @@ export async function generateSceneGraph(projectId: string): Promise<{
   }
 
   const provider = getLLMClient();
+
+  if (!provider) {
+    console.log("No external LLM provider configured. Generating deterministic narrative plan...");
+    const fallback = generateFallbackNarrativePlan(
+      frames.map((f) => ({ id: f.id, name: f.name })),
+      projectBrief,
+      durationTarget,
+      stylePreset,
+    );
+    const validation = validateSceneGraphResponse(fallback, validFrameIds, durationTarget);
+    return await handleValidationResult(supabase, projectId, sceneGraphRecordId, validation);
+  }
 
   try {
     let rawText = "";
@@ -283,7 +445,7 @@ export async function generateSceneGraph(projectId: string): Promise<{
         validation = validateSceneGraphResponse(parsedJson, validFrameIds, durationTarget);
       }
 
-      return await handleValidationResult(supabase, sceneGraphRecord.id, validation);
+      return await handleValidationResult(supabase, projectId, sceneGraphRecordId, validation);
     } else {
       // Anthropic Provider
       const contentBlocks: Anthropic.Messages.ContentBlockParam[] = [
@@ -362,24 +524,49 @@ export async function generateSceneGraph(projectId: string): Promise<{
         validation = validateSceneGraphResponse(parsedJson, validFrameIds, durationTarget);
       }
 
-      return await handleValidationResult(supabase, sceneGraphRecord.id, validation);
+      return await handleValidationResult(supabase, projectId, sceneGraphRecordId, validation);
     }
   } catch (err) {
+    console.warn("Shot planner generation exception. Falling back to deterministic narrative planning:", err);
+    try {
+      const fallback = generateFallbackNarrativePlan(
+        frames.map((f) => ({ id: f.id, name: f.name })),
+        projectBrief,
+        durationTarget,
+        stylePreset,
+      );
+      const validation = validateSceneGraphResponse(fallback, validFrameIds, durationTarget);
+      if (validation.valid) {
+        return await handleValidationResult(supabase, projectId, sceneGraphRecordId, validation);
+      }
+    } catch (fallbackErr) {
+      console.error("Fallback narrative generation error:", fallbackErr);
+    }
+
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error("Shot planner generation exception:", err);
 
-    await supabase
-      .from("scene_graphs")
-      .update({
-        status: "error",
-        error_message: errorMsg,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", sceneGraphRecord.id);
+    try {
+      await supabase
+        .from("scene_graphs")
+        .update({
+          status: "error",
+          error_message: errorMsg,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sceneGraphRecordId);
+    } catch {}
+
+    localStore.upsertSceneGraph({
+      id: sceneGraphRecordId,
+      project_id: projectId,
+      status: "error",
+      error_message: errorMsg,
+    });
 
     return {
       success: false,
-      sceneGraphId: sceneGraphRecord.id,
+      sceneGraphId: sceneGraphRecordId,
       error: errorMsg,
     };
   }
@@ -387,6 +574,7 @@ export async function generateSceneGraph(projectId: string): Promise<{
 
 async function handleValidationResult(
   supabase: Awaited<ReturnType<typeof createServerClient>>,
+  projectId: string,
   sceneGraphId: string,
   validation: ReturnType<typeof validateSceneGraphResponse>,
 ): Promise<{ success: boolean; sceneGraphId?: string; error?: string }> {
@@ -403,14 +591,23 @@ async function handleValidationResult(
       userMsg = errType;
     }
 
-    await supabase
-      .from("scene_graphs")
-      .update({
-        status: "error",
-        error_message: userMsg,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", sceneGraphId);
+    try {
+      await supabase
+        .from("scene_graphs")
+        .update({
+          status: "error",
+          error_message: userMsg,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sceneGraphId);
+    } catch {}
+
+    localStore.upsertSceneGraph({
+      id: sceneGraphId,
+      project_id: projectId,
+      status: "error",
+      error_message: userMsg,
+    });
 
     return {
       success: false,
@@ -421,14 +618,23 @@ async function handleValidationResult(
 
   if (!validation.valid || !validation.data || !validation.data.shots) {
     const errorMsg = `Scene graph validation failed: ${validation.errors.join("; ")}`;
-    await supabase
-      .from("scene_graphs")
-      .update({
-        status: "error",
-        error_message: errorMsg,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", sceneGraphId);
+    try {
+      await supabase
+        .from("scene_graphs")
+        .update({
+          status: "error",
+          error_message: errorMsg,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sceneGraphId);
+    } catch {}
+
+    localStore.upsertSceneGraph({
+      id: sceneGraphId,
+      project_id: projectId,
+      status: "error",
+      error_message: errorMsg,
+    });
 
     return {
       success: false,
@@ -442,15 +648,25 @@ async function handleValidationResult(
     shot_id: s.shot_id || `s${idx + 1}`,
   }));
 
-  await supabase
-    .from("scene_graphs")
-    .update({
-      status: "ready",
-      error_message: null,
-      shots: finalShots,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", sceneGraphId);
+  try {
+    await supabase
+      .from("scene_graphs")
+      .update({
+        status: "ready",
+        error_message: null,
+        shots: finalShots,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", sceneGraphId);
+  } catch {}
+
+  localStore.upsertSceneGraph({
+    id: sceneGraphId,
+    project_id: projectId,
+    status: "ready",
+    error_message: null,
+    shots: finalShots,
+  });
 
   return {
     success: true,

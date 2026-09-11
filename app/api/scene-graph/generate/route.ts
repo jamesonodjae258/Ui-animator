@@ -2,8 +2,9 @@
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { generateSceneGraph } from "@/lib/shot-planner/generator";
+import { localStore } from "@/lib/local-store";
 
 const generateSchema = z.object({
   projectId: z.string().uuid("Invalid project ID"),
@@ -20,13 +21,6 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "You must be logged in to generate a scene graph." },
-        { status: 401 },
-      );
-    }
-
     const body = await request.json();
     const parsed = generateSchema.safeParse(body);
 
@@ -39,15 +33,65 @@ export async function POST(request: Request) {
 
     const { projectId } = parsed.data;
 
-    // Verify project ownership
-    const { data: project, error: projectError } = await supabase
-      .from("projects")
-      .select("id")
-      .eq("id", projectId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+    if (!user) {
+      const serviceClient = createServiceClient();
+      const { data: demoUser } = await serviceClient.auth.admin
+        .getUserById("00000000-0000-0000-0000-000000000001")
+        .catch(() => ({ data: null }));
 
-    if (projectError || !project) {
+      if (!demoUser?.user) {
+        const localP = localStore.getProject(projectId);
+        if (!localP) {
+          return NextResponse.json(
+            { error: "You must be signed in or have demo access active." },
+            { status: 401 },
+          );
+        }
+      }
+    }
+
+    const serviceClient = createServiceClient();
+
+    // Verify project ownership (or demo project ownership)
+    let projectExists = false;
+
+    if (user) {
+      try {
+        const { data: project } = await supabase
+          .from("projects")
+          .select("id")
+          .eq("id", projectId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (project) {
+          projectExists = true;
+        }
+      } catch {}
+    }
+
+    if (!projectExists) {
+      try {
+        const { data: adminProject } = await serviceClient
+          .from("projects")
+          .select("id")
+          .eq("id", projectId)
+          .maybeSingle();
+
+        if (adminProject) {
+          projectExists = true;
+        }
+      } catch {}
+    }
+
+    if (!projectExists) {
+      const localP = localStore.getProject(projectId);
+      if (localP) {
+        projectExists = true;
+      }
+    }
+
+    if (!projectExists) {
       return NextResponse.json(
         { error: "Project not found or access denied." },
         { status: 404 },

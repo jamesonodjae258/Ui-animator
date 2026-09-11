@@ -168,73 +168,75 @@ export function InteractiveStage() {
       {/* Simulator Workspace Card */}
       <div className="rounded-xl border border-border bg-surface-1/80 backdrop-blur-sm overflow-hidden shadow-sm">
         {/* Top Control Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border bg-surface-0/60 text-xs">
-          {/* Tabs */}
-          <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-surface-2/60 border border-border">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-3.5 sm:px-4 py-3 border-b border-border bg-surface-0/60 text-xs">
+          {/* Tabs with horizontal scroll on mobile */}
+          <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-surface-2/60 border border-border overflow-x-auto no-scrollbar scroll-smooth">
             <button
               onClick={() => setActiveTab("narrative")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md shrink-0 transition-all text-xs cursor-pointer ${
                 activeTab === "narrative"
                   ? "bg-surface-0 text-text-primary shadow-xs font-medium"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Narrative scene graph</span>
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span>Narrative <span className="hidden sm:inline">scene graph</span></span>
             </button>
             <button
               onClick={() => setActiveTab("figma")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md shrink-0 transition-all text-xs cursor-pointer ${
                 activeTab === "figma"
                   ? "bg-surface-0 text-text-primary shadow-xs font-medium"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Figma frame parser</span>
+              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <span>Figma <span className="hidden sm:inline">frame parser</span></span>
             </button>
             <button
               onClick={() => setActiveTab("remotion")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md shrink-0 transition-all text-xs cursor-pointer ${
                 activeTab === "remotion"
                   ? "bg-surface-0 text-text-primary shadow-xs font-medium"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
-              <Code2 className="w-3.5 h-3.5" />
-              <span>Remotion composition</span>
+              <Code2 className="w-3.5 h-3.5 shrink-0" />
+              <span>Remotion <span className="hidden sm:inline">composition</span></span>
             </button>
           </div>
 
-          {/* Right actions: Aspect ratio toggle & playhead */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 text-[11px] text-text-muted font-mono">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          {/* Right actions: Aspect ratio toggle & FPS badge */}
+          <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 text-[11px] text-text-muted font-mono">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>60.0 FPS</span>
             </div>
 
             <div className="flex items-center gap-1 p-0.5 rounded-md bg-surface-2/60 border border-border">
               <button
                 onClick={() => setAspectRatio("16:9")}
-                className={`p-1 rounded ${
+                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors cursor-pointer ${
                   aspectRatio === "16:9"
-                    ? "bg-surface-0 text-text-primary"
+                    ? "bg-surface-0 text-text-primary shadow-xs font-medium"
                     : "text-text-muted hover:text-text-primary"
                 }`}
                 title="Widescreen (16:9)"
               >
                 <Monitor className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-mono">16:9</span>
               </button>
               <button
                 onClick={() => setAspectRatio("9:16")}
-                className={`p-1 rounded ${
+                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors cursor-pointer ${
                   aspectRatio === "9:16"
-                    ? "bg-surface-0 text-text-primary"
+                    ? "bg-surface-0 text-text-primary shadow-xs font-medium"
                     : "text-text-muted hover:text-text-primary"
                 }`}
                 title="Vertical Social (9:16)"
               >
                 <Smartphone className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-mono">9:16</span>
               </button>
             </div>
           </div>

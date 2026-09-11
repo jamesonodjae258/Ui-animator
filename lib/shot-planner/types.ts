@@ -19,6 +19,7 @@ export interface ShotPlan {
   duration_ms: number;
   caption?: string;
   transition_in: TransitionType;
+  order_index?: number;
 }
 
 export interface SceneGraphData {

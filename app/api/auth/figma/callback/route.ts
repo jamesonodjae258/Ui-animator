@@ -60,8 +60,16 @@ export async function GET(request: Request) {
     // Exchange code for tokens
     const tokens = await exchangeCodeForTokens(code, url.origin);
 
-    // Fetch Figma user profile
-    const figmaUser = await fetchFigmaUser(tokens.access_token);
+    // Fetch Figma user profile if available
+    let figmaHandle: string | null = null;
+    let figmaEmail: string | null = null;
+    try {
+      const figmaUser = await fetchFigmaUser(tokens.access_token);
+      figmaHandle = figmaUser.handle;
+      figmaEmail = figmaUser.email;
+    } catch {
+      // Safe fallback if current_user:read is not granted
+    }
 
     // Save encrypted connection to DB using service client
     await saveFigmaConnection(
@@ -69,8 +77,8 @@ export async function GET(request: Request) {
       tokens.access_token,
       tokens.refresh_token,
       tokens.expires_in,
-      figmaUser.handle,
-      figmaUser.email,
+      figmaHandle,
+      figmaEmail,
     );
 
     // Redirect back to the import page with success indicator

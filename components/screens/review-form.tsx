@@ -40,6 +40,82 @@ const CAMERA_LABELS: Record<string, string> = {
   static_hold: "Static hold",
 };
 
+// MOCK DATA — Stage 2 mock review shots for static review
+const MOCK_REVIEW_SHOTS: ShotWithFrame[] = [
+  {
+    shot_id: "mock-shot-1",
+    frame_id: "frame-1",
+    frameName: "Hero Landing",
+    thumbnailUrl: null,
+    narrative_beat: "hook",
+    camera_move: "zoom_in_center",
+    duration_ms: 4500,
+    caption: "Stop wrestling with complex dashboards.",
+    transition_in: "fade",
+    order_index: 0,
+  },
+  {
+    shot_id: "mock-shot-2",
+    frame_id: "frame-2",
+    frameName: "Legacy Analytics",
+    thumbnailUrl: null,
+    narrative_beat: "problem",
+    camera_move: "pan_left_to_right",
+    duration_ms: 5000,
+    caption: "Teams lose hours every week digging through fragmented metrics.",
+    transition_in: "cut",
+    order_index: 1,
+  },
+  {
+    shot_id: "mock-shot-3",
+    frame_id: "frame-3",
+    frameName: "Automated Insights",
+    thumbnailUrl: null,
+    narrative_beat: "reveal",
+    camera_move: "zoom_out",
+    duration_ms: 6000,
+    caption: "Meet Motioncast: automated clarity in real-time.",
+    transition_in: "fade",
+    order_index: 2,
+  },
+  {
+    shot_id: "mock-shot-4",
+    frame_id: "frame-4",
+    frameName: "Interactive Flow",
+    thumbnailUrl: null,
+    narrative_beat: "highlight",
+    camera_move: "ken_burns_subtle",
+    duration_ms: 5500,
+    caption: "Filter, isolate, and act on insights in one click.",
+    transition_in: "cut",
+    order_index: 3,
+  },
+  {
+    shot_id: "mock-shot-5",
+    frame_id: "frame-5",
+    frameName: "Team Collaboration",
+    thumbnailUrl: null,
+    narrative_beat: "highlight",
+    camera_move: "static_hold",
+    duration_ms: 4000,
+    caption: "Share live video stories directly to Slack and Linear.",
+    transition_in: "cut",
+    order_index: 4,
+  },
+  {
+    shot_id: "mock-shot-6",
+    frame_id: "frame-6",
+    frameName: "Payoff Summary",
+    thumbnailUrl: null,
+    narrative_beat: "payoff",
+    camera_move: "zoom_in_center",
+    duration_ms: 5000,
+    caption: "Start turning your Figma prototypes into narrative videos today.",
+    transition_in: "fade",
+    order_index: 5,
+  },
+];
+
 export function ReviewForm({
   projectId,
   sceneGraphId,
@@ -50,7 +126,9 @@ export function ReviewForm({
   errorMessage,
 }: ReviewFormProps) {
   const router = useRouter();
-  const [shots, setShots] = useState<ShotWithFrame[]>(initialShots);
+  const [shots, setShots] = useState<ShotWithFrame[]>(
+    initialShots && initialShots.length > 0 ? initialShots : MOCK_REVIEW_SHOTS
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isQueueingRender, setIsQueueingRender] = useState(false);
 
@@ -204,7 +282,21 @@ export function ReviewForm({
                     : "",
                 ].join(" ")}
               >
-                <div className="flex items-start gap-4 p-4">
+                <div className="flex items-start gap-3 p-4">
+                  {/* Drag Handle */}
+                  <div
+                    className="cursor-grab active:cursor-grabbing text-text-muted hover:text-text-secondary pt-6 shrink-0 select-none"
+                    title="Drag to reorder shot"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="9" cy="6" r="1.5" />
+                      <circle cx="15" cy="6" r="1.5" />
+                      <circle cx="9" cy="12" r="1.5" />
+                      <circle cx="15" cy="12" r="1.5" />
+                      <circle cx="9" cy="18" r="1.5" />
+                      <circle cx="15" cy="18" r="1.5" />
+                    </svg>
+                  </div>
                   {/* Frame Thumbnail */}
                   <div className="w-28 h-[70px] flex-shrink-0 bg-surface-2 rounded-[calc(var(--radius)*0.5)] overflow-hidden border border-border">
                     {shot.thumbnailUrl ? (

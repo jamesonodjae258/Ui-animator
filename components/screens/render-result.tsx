@@ -364,15 +364,24 @@ export function RenderResult({
             size="sm"
             onClick={() => router.push(`/projects/${projectId}/review`)}
           >
-            Back to shot review
+            ← Back to shot review
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push(`/projects/${projectId}/import`)}
-          >
-            Re-import project
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(`/projects/${projectId}/import`)}
+            >
+              Re-import project
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push("/projects")}
+            >
+              + Create another
+            </Button>
+          </div>
         </div>
       </div>
     </div>

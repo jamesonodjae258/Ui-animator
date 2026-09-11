@@ -29,6 +29,25 @@ type ProviderClient =
     };
 
 function getLLMClient(): ProviderClient | null {
+  const nvidiaKey = process.env.NVIDIA_API_KEY;
+  const isNvidiaExplicit =
+    process.env.LLM_PROVIDER === "nvidia" ||
+    (Boolean(nvidiaKey) && !nvidiaKey?.startsWith("your-") && process.env.LLM_PROVIDER !== "anthropic");
+
+  if (isNvidiaExplicit && nvidiaKey && !nvidiaKey.startsWith("your-")) {
+    const baseURL = process.env.NVIDIA_BASE_URL?.trim() || "https://integrate.api.nvidia.com/v1";
+    const model = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.3-70b-instruct";
+
+    return {
+      type: "nvidia",
+      client: new OpenAI({
+        apiKey: nvidiaKey,
+        baseURL,
+      }),
+      model,
+    };
+  }
+
   const anthropicKey =
     process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.startsWith("your-")
       ? process.env.ANTHROPIC_API_KEY
@@ -60,7 +79,6 @@ function getLLMClient(): ProviderClient | null {
     };
   }
 
-  const nvidiaKey = process.env.NVIDIA_API_KEY;
   if (nvidiaKey && !nvidiaKey.startsWith("your-")) {
     const baseURL = process.env.NVIDIA_BASE_URL?.trim() || "https://integrate.api.nvidia.com/v1";
     const model = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.3-70b-instruct";
@@ -383,12 +401,19 @@ export async function generateSceneGraph(projectId: string): Promise<{
         },
       ];
 
+      const modelLower = provider.model.toLowerCase();
+      const modelSupportsVision =
+        modelLower.includes("vision") ||
+        modelLower.includes("vl") ||
+        modelLower.includes("claude") ||
+        modelLower.includes("4o");
+
       for (const fp of framePayloads) {
         userContent.push({
           type: "text",
           text: `\nFrame ID: "${fp.id}" | Name: "${fp.name}" | Order: ${fp.order}`,
         });
-        if (fp.base64Image) {
+        if (fp.base64Image && modelSupportsVision) {
           userContent.push({
             type: "image_url",
             image_url: {

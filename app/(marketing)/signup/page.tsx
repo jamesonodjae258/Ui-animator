@@ -16,50 +16,11 @@ function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [usePassword, setUsePassword] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [isDemoPending, setIsDemoPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const supabase = createClient();
-
-  async function handleMagicLink(e: React.FormEvent) {
-    e.preventDefault();
-    setErrorMessage(null);
-
-    if (!email || !email.includes("@")) {
-      setErrorMessage("Please enter a valid email address.");
-      return;
-    }
-
-    startTransition(async () => {
-      try {
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            data: {
-              name: name.trim() || undefined,
-              full_name: name.trim() || undefined,
-            },
-            emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(
-              redirectPath
-            )}`,
-          },
-        });
-
-        if (error) {
-          setErrorMessage(error.message);
-          return;
-        }
-
-        setMagicLinkSent(true);
-      } catch (err) {
-        setErrorMessage(
-          err instanceof Error ? err.message : "Failed to send magic link."
-        );
-      }
-    });
-  }
 
   async function handlePasswordSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -78,16 +39,13 @@ function SignupForm() {
     startTransition(async () => {
       try {
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
             data: {
               name: name.trim() || undefined,
               full_name: name.trim() || undefined,
             },
-            emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(
-              redirectPath
-            )}`,
           },
         });
 
@@ -96,12 +54,25 @@ function SignupForm() {
           return;
         }
 
-        // If session exists immediately (email confirmation disabled in dev)
+        // If session exists immediately, navigate directly
         if (data.session) {
           router.push(redirectPath);
           router.refresh();
+          return;
+        }
+
+        // Otherwise try signing in immediately (in case email confirmation is off)
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+        if (!signInErr) {
+          router.push(redirectPath);
+          router.refresh();
         } else {
-          setMagicLinkSent(true);
+          // If Supabase has email confirmation enabled in dashboard
+          setErrorMessage("Account created! Please check your email to verify before signing in.");
         }
       } catch (err) {
         setErrorMessage(
@@ -111,8 +82,27 @@ function SignupForm() {
     });
   }
 
+  async function handleDemoLogin() {
+    setIsDemoPending(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/auth/demo", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Could not start demo session");
+      }
+      router.push(redirectPath);
+      router.refresh();
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to start demo session."
+      );
+      setIsDemoPending(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-surface-1 flex items-center justify-center p-4 sm:p-6">
+    <div className="min-h-screen bg-surface-0 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-md">
         {/* Brand Header */}
         <div className="text-center mb-6">
@@ -135,138 +125,70 @@ function SignupForm() {
 
         {/* Floating Card Shell */}
         <Card padding="lg" className="border border-border shadow-sm">
-          {magicLinkSent ? (
-            <div className="text-center py-4 space-y-4">
-              <div className="mx-auto w-12 h-12 rounded-full bg-surface-2 border border-border flex items-center justify-center text-text-primary">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                  />
-                </svg>
+          <div className="space-y-4">
+            {errorMessage && (
+              <div className="p-3 text-xs rounded-lg bg-surface-2 border border-border text-red-600 dark:text-red-400">
+                {errorMessage}
               </div>
-              <div className="space-y-1">
-                <h2 className="text-base font-semibold text-text-primary">
-                  Check your email
-                </h2>
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  We sent a confirmation link to{" "}
-                  <strong className="text-text-primary">{email}</strong>. Click
-                  the link to verify your account and get started.
-                </p>
+            )}
+
+            <form onSubmit={handlePasswordSignup} className="space-y-4">
+              <Input
+                label="Full name (optional)"
+                type="text"
+                placeholder="Jane Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <Input
+                label="Email address"
+                type="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+              <Input
+                label="Password"
+                type="password"
+                placeholder="•••••••• (min. 6 characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+              <Button
+                type="submit"
+                variant="primary"
+                size="default"
+                className="w-full"
+                disabled={isPending || isDemoPending}
+              >
+                {isPending ? "Creating account..." : "Create account"}
+              </Button>
+            </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
               </div>
-              <div className="pt-2 flex flex-col gap-2">
-                <Button
-                  variant="secondary"
-                  size="default"
-                  onClick={() => setMagicLinkSent(false)}
-                  className="w-full"
-                >
-                  Use a different email
-                </Button>
+              <div className="relative flex justify-center text-[10px] uppercase">
+                <span className="bg-surface-1 px-2 text-text-muted">Or</span>
               </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {errorMessage && (
-                <div className="p-3 text-xs rounded-lg bg-surface-2 border border-border text-red-600 dark:text-red-400">
-                  {errorMessage}
-                </div>
-              )}
 
-              {!usePassword ? (
-                /* Primary Option: Magic Link */
-                <form onSubmit={handleMagicLink} className="space-y-4">
-                  <Input
-                    label="Your name"
-                    type="text"
-                    placeholder="Jane Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                  <Input
-                    label="Email address"
-                    type="email"
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="default"
-                    className="w-full"
-                    disabled={isPending}
-                  >
-                    {isPending ? "Sending link..." : "Send magic link"}
-                  </Button>
-                </form>
-              ) : (
-                /* Secondary Option: Password */
-                <form onSubmit={handlePasswordSignup} className="space-y-4">
-                  <Input
-                    label="Your name"
-                    type="text"
-                    placeholder="Jane Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                  <Input
-                    label="Email address"
-                    type="email"
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                  <Input
-                    label="Password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="new-password"
-                  />
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="default"
-                    className="w-full"
-                    disabled={isPending}
-                  >
-                    {isPending ? "Creating account..." : "Sign up"}
-                  </Button>
-                </form>
-              )}
-
-              {/* Mode Toggle */}
-              <div className="pt-2 text-center border-t border-border">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setErrorMessage(null);
-                    setUsePassword(!usePassword);
-                  }}
-                  className="text-xs text-text-muted hover:text-text-primary transition-colors"
-                >
-                  {usePassword
-                    ? "Send me a magic link instead"
-                    : "Or use a password instead"}
-                </button>
-              </div>
-            </div>
-          )}
+            <Button
+              type="button"
+              variant="secondary"
+              size="default"
+              className="w-full"
+              disabled={isPending || isDemoPending}
+              onClick={handleDemoLogin}
+            >
+              {isDemoPending ? "Entering demo..." : "Continue as demo user"}
+            </Button>
+          </div>
         </Card>
 
         {/* Footer Link */}
@@ -276,7 +198,7 @@ function SignupForm() {
             href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
             className="text-text-primary font-medium underline underline-offset-4 hover:opacity-80"
           >
-            Log in
+            Sign in
           </Link>
         </p>
       </div>
@@ -288,7 +210,7 @@ export default function SignupPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-surface-1 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-surface-0 flex items-center justify-center p-4">
           <div className="text-xs text-text-muted">Loading...</div>
         </div>
       }

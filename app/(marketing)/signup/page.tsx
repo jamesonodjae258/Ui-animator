@@ -3,7 +3,6 @@
 import { useState, useTransition, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -19,8 +18,6 @@ function SignupForm() {
   const [isPending, startTransition] = useTransition();
   const [isDemoPending, setIsDemoPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const supabase = createClient();
 
   async function handlePasswordSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -38,42 +35,25 @@ function SignupForm() {
 
     startTransition(async () => {
       try {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            data: {
-              name: name.trim() || undefined,
-              full_name: name.trim() || undefined,
-            },
-          },
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+            name: name.trim(),
+          }),
         });
 
-        if (error) {
-          setErrorMessage(error.message);
-          return;
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to create account.");
         }
 
-        // If session exists immediately, navigate directly
-        if (data.session) {
-          router.push(redirectPath);
-          router.refresh();
-          return;
-        }
-
-        // Otherwise try signing in immediately (in case email confirmation is off)
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-
-        if (!signInErr) {
-          router.push(redirectPath);
-          router.refresh();
-        } else {
-          // If Supabase has email confirmation enabled in dashboard
-          setErrorMessage("Account created! Please check your email to verify before signing in.");
-        }
+        // Account created and user logged in directly!
+        router.push(redirectPath);
+        router.refresh();
       } catch (err) {
         setErrorMessage(
           err instanceof Error ? err.message : "Failed to create account."

@@ -3,7 +3,6 @@
 import { useState, useTransition, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -19,8 +18,6 @@ function LoginForm() {
   const [isDemoPending, setIsDemoPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const supabase = createClient();
-
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
     setErrorMessage(null);
@@ -32,21 +29,23 @@ function LoginForm() {
 
     startTransition(async () => {
       try {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim(), password }),
         });
 
-        if (error) {
-          setErrorMessage(error.message);
-          return;
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to sign in.");
         }
 
         router.push(redirectPath);
         router.refresh();
       } catch (err) {
         setErrorMessage(
-          err instanceof Error ? err.message : "Failed to log in."
+          err instanceof Error ? err.message : "Failed to sign in."
         );
       }
     });

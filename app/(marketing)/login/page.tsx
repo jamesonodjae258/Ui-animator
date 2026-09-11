@@ -96,10 +96,10 @@ function LoginForm() {
             href="/"
             className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-text-primary hover:opacity-80 transition-opacity"
           >
-            <div className="h-6 w-6 rounded-full bg-fill-primary flex items-center justify-center text-on-primary text-xs font-bold">
-              M
+            <div className="w-5 h-5 rounded-sm bg-text-primary flex items-center justify-center text-surface-0 text-[11px] font-bold">
+              ▶
             </div>
-            <span>Motioncast</span>
+            <span>UI Animator</span>
           </Link>
           <h1 className="text-2xl font-semibold tracking-tight text-text-primary mt-3">
             Welcome back

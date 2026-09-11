@@ -74,7 +74,7 @@ const MOCK_REVIEW_SHOTS: ShotWithFrame[] = [
     narrative_beat: "reveal",
     camera_move: "zoom_out",
     duration_ms: 6000,
-    caption: "Meet Motioncast: automated clarity in real-time.",
+    caption: "Meet UI Animator: automated clarity in real-time.",
     transition_in: "fade",
     order_index: 2,
   },

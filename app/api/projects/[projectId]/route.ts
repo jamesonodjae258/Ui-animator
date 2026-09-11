@@ -47,6 +47,10 @@ export async function PATCH(
     if (typeof body.brief === "string") {
       allowedFields.brief = body.brief;
     }
+    if (typeof body.project_brief === "string") {
+      allowedFields.brief = body.project_brief;
+      allowedFields.project_brief = body.project_brief;
+    }
     if (typeof body.name === "string") {
       allowedFields.name = body.name;
     }

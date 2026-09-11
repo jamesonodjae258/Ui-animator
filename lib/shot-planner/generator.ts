@@ -29,18 +29,22 @@ type ProviderClient =
     };
 
 function getLLMClient(): ProviderClient | null {
-  const nvidiaKey = process.env.NVIDIA_API_KEY;
-  if (nvidiaKey && !nvidiaKey.startsWith("your-")) {
-    const baseURL = process.env.NVIDIA_BASE_URL?.trim() || "https://integrate.api.nvidia.com/v1";
-    const model = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.3-70b-instruct";
+  const anthropicKey =
+    process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.startsWith("your-")
+      ? process.env.ANTHROPIC_API_KEY
+      : process.env.AGENTROUTER_API_KEY && !process.env.AGENTROUTER_API_KEY.startsWith("your-")
+        ? process.env.AGENTROUTER_API_KEY
+        : null;
 
+  if (anthropicKey) {
+    const baseURL = process.env.AGENTROUTER_BASE_URL?.trim() || undefined;
     return {
-      type: "nvidia",
-      client: new OpenAI({
-        apiKey: nvidiaKey,
-        baseURL,
+      type: "anthropic",
+      client: new Anthropic({
+        apiKey: anthropicKey,
+        ...(baseURL ? { baseURL } : {}),
       }),
-      model,
+      model: "claude-3-5-sonnet-20241022",
     };
   }
 
@@ -56,20 +60,18 @@ function getLLMClient(): ProviderClient | null {
     };
   }
 
-  const anthropicKey =
-    process.env.AGENTROUTER_API_KEY && !process.env.AGENTROUTER_API_KEY.startsWith("your-")
-      ? process.env.AGENTROUTER_API_KEY
-      : process.env.ANTHROPIC_API_KEY;
+  const nvidiaKey = process.env.NVIDIA_API_KEY;
+  if (nvidiaKey && !nvidiaKey.startsWith("your-")) {
+    const baseURL = process.env.NVIDIA_BASE_URL?.trim() || "https://integrate.api.nvidia.com/v1";
+    const model = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.3-70b-instruct";
 
-  if (anthropicKey && !anthropicKey.startsWith("your-")) {
-    const baseURL = process.env.AGENTROUTER_BASE_URL?.trim() || undefined;
     return {
-      type: "anthropic",
-      client: new Anthropic({
-        apiKey: anthropicKey,
-        ...(baseURL ? { baseURL } : {}),
+      type: "nvidia",
+      client: new OpenAI({
+        apiKey: nvidiaKey,
+        baseURL,
       }),
-      model: "claude-3-5-sonnet-20241022",
+      model,
     };
   }
 

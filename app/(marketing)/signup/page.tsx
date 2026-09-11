@@ -16,7 +16,6 @@ function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPending, startTransition] = useTransition();
-  const [isDemoPending, setIsDemoPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handlePasswordSignup(e: React.FormEvent) {
@@ -60,25 +59,6 @@ function SignupForm() {
         );
       }
     });
-  }
-
-  async function handleDemoLogin() {
-    setIsDemoPending(true);
-    setErrorMessage(null);
-    try {
-      const res = await fetch("/api/auth/demo", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Could not start demo session");
-      }
-      router.push(redirectPath);
-      router.refresh();
-    } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Failed to start demo session."
-      );
-      setIsDemoPending(false);
-    }
   }
 
   return (
@@ -143,31 +123,11 @@ function SignupForm() {
                 variant="primary"
                 size="default"
                 className="w-full"
-                disabled={isPending || isDemoPending}
+                disabled={isPending}
               >
                 {isPending ? "Creating account..." : "Create account"}
               </Button>
             </form>
-
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase">
-                <span className="bg-surface-1 px-2 text-text-muted">Or</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="default"
-              className="w-full"
-              disabled={isPending || isDemoPending}
-              onClick={handleDemoLogin}
-            >
-              {isDemoPending ? "Entering demo..." : "Continue as demo user"}
-            </Button>
           </div>
         </Card>
 

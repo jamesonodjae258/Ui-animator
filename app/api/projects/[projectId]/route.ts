@@ -3,41 +3,26 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
-const DEMO_USER_ID = "00000000-0000-0000-0000-000000000001";
-
-/**
- * PATCH /api/projects/[projectId]
- * Update or upsert project metadata (brief, style preset, duration, etc.)
- */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ projectId: string }> },
 ) {
   try {
     const supabase = await createClient();
-    const serviceClient = createServiceClient();
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // In dev mode or for demo users, fallback to demo user ID if no active session
-    let effectiveUserId = user?.id;
-    let clientToUse = supabase;
-
-    if (!effectiveUserId) {
-      // Check if demo user exists in auth.users
-      const { data: demoUser } = await serviceClient.auth.admin.getUserById(DEMO_USER_ID).catch(() => ({ data: null }));
-      if (demoUser?.user) {
-        effectiveUserId = DEMO_USER_ID;
-        clientToUse = serviceClient as unknown as typeof supabase;
-      } else {
-        return NextResponse.json(
-          { error: "You must be signed in or have demo access active." },
-          { status: 401 },
-        );
-      }
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please sign in." },
+        { status: 401 },
+      );
     }
+
+    const effectiveUserId = user.id;
+    const clientToUse = supabase;
 
     const { projectId } = await params;
     const body = await request.json();

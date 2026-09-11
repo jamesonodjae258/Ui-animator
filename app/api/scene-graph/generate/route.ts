@@ -34,20 +34,10 @@ export async function POST(request: Request) {
     const { projectId } = parsed.data;
 
     if (!user) {
-      const serviceClient = createServiceClient();
-      const { data: demoUser } = await serviceClient.auth.admin
-        .getUserById("00000000-0000-0000-0000-000000000001")
-        .catch(() => ({ data: null }));
-
-      if (!demoUser?.user) {
-        const localP = localStore.getProject(projectId);
-        if (!localP) {
-          return NextResponse.json(
-            { error: "You must be signed in or have demo access active." },
-            { status: 401 },
-          );
-        }
-      }
+      return NextResponse.json(
+        { error: "Unauthorized. Please sign in." },
+        { status: 401 },
+      );
     }
 
     const serviceClient = createServiceClient();

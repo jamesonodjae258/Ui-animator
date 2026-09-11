@@ -34,7 +34,6 @@ export function Navbar() {
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    await fetch("/api/auth/demo", { method: "DELETE" }).catch(() => {});
     setUserEmail(null);
     window.location.reload();
   };

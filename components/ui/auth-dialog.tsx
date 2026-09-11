@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, Sparkles, CheckCircle2, Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
+import { X, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/browser";
 
 interface AuthDialogProps {
   isOpen: boolean;
@@ -17,31 +16,10 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
-
-  const handleDemoLogin = async () => {
-    setIsDemoLoading(true);
-    setErrorMsg(null);
-    try {
-      const res = await fetch("/api/auth/demo", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Could not launch demo session");
-      }
-      setSuccessMsg("Demo session active! Reloading...");
-      setTimeout(() => {
-        onSuccess?.();
-        window.location.reload();
-      }, 700);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Failed to start demo session");
-      setIsDemoLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,24 +32,23 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const supabase = createClient();
-
     try {
-      if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        setSuccessMsg("Signed in successfully!");
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) throw error;
-        setSuccessMsg("Account created! You are now signed in.");
+      const endpoint = mode === "signin" ? "/api/auth/login" : "/api/auth/signup";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Authentication failed");
       }
+
+      setSuccessMsg(
+        mode === "signin" ? "Signed in successfully!" : "Account created! Redirecting..."
+      );
 
       setTimeout(() => {
         onSuccess?.();
@@ -116,54 +93,21 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
           </p>
         </div>
 
-        {/* Fast 1-Click Demo Button */}
-        <div className="mb-5 pb-5 border-b border-border">
-          <button
-            onClick={handleDemoLogin}
-            disabled={isDemoLoading || isLoading}
-            className="w-full flex items-center justify-between p-3.5 rounded-lg border border-accent/40 bg-surface-0 hover:border-accent hover:bg-surface-2/40 transition-all text-left cursor-pointer group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-md bg-accent/10 flex items-center justify-center text-accent">
-                {isDemoLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4" />
-                )}
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-text-primary group-hover:text-accent transition-colors flex items-center gap-1.5">
-                  <span>1-click demo access</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-accent/10 text-accent">
-                    Instant
-                  </span>
-                </div>
-                <div className="text-[11px] text-text-muted">
-                  Test import, scene graph planning & video rendering immediately.
-                </div>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
-          </button>
-        </div>
-
         {/* Email / Password Form */}
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1.5">
               Email address
             </label>
-            <div className="relative">
-              <Input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="designer@startup.com"
-                className="w-full text-xs"
-                disabled={isLoading || isDemoLoading}
-              />
-            </div>
+            <Input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="designer@startup.com"
+              className="w-full text-xs"
+              disabled={isLoading}
+            />
           </div>
 
           <div>
@@ -177,7 +121,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
               className="w-full text-xs"
-              disabled={isLoading || isDemoLoading}
+              disabled={isLoading}
             />
           </div>
 
@@ -198,7 +142,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
             type="submit"
             variant="primary"
             className="w-full justify-center text-xs py-2"
-            disabled={isLoading || isDemoLoading}
+            disabled={isLoading}
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
@@ -219,11 +163,12 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
               onClick={() => {
                 setMode(mode === "signin" ? "signup" : "signin");
                 setErrorMsg(null);
+                setSuccessMsg(null);
               }}
-              className="text-xs text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+              className="text-xs text-text-muted hover:text-text-primary transition-colors"
             >
               {mode === "signin"
-                ? "Don't have an account yet? Create one"
+                ? "Don't have an account? Sign up"
                 : "Already have an account? Sign in"}
             </button>
           </div>

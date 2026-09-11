@@ -129,7 +129,7 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <div className="pt-6 border-t border-border flex items-center justify-between">
+            <div className="pt-6 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="text-xs text-text-muted">
                 Need to end your active session?
               </div>
@@ -138,6 +138,7 @@ export default function SettingsPage() {
                 size="default"
                 onClick={handleLogout}
                 disabled={loggingOut}
+                className="w-full sm:w-auto"
               >
                 {loggingOut ? "Signing out..." : "Log out"}
               </Button>

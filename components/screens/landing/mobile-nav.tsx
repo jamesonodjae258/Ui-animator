@@ -154,7 +154,7 @@ export function MobileNav({ onOpenAuth, userEmail, onSignOut }: MobileNavProps) 
                     onOpenAuth?.();
                   }}
                 >
-                  Sign in / Demo access
+                  Sign in
                 </Button>
               )}
             </div>

@@ -207,9 +207,9 @@ export function ReviewForm({
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
+    <div className="max-w-3xl mx-auto px-2 sm:px-6 py-6 sm:py-10">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <h1 className="text-xl font-semibold text-text-primary">Shot review</h1>
         <p className="mt-1 text-sm text-text-muted">
           Your narrative arc — review the story, adjust captions, refine camera moves.
@@ -217,8 +217,8 @@ export function ReviewForm({
       </div>
 
       {/* Summary bar */}
-      <Card className="mb-8">
-        <div className="flex items-center justify-between text-sm">
+      <Card className="mb-6 sm:mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
           <div className="flex items-center gap-4">
             <span className="text-text-secondary">
               <span className="font-medium text-text-primary">{shots.length}</span> shots
@@ -282,23 +282,24 @@ export function ReviewForm({
                     : "",
                 ].join(" ")}
               >
-                <div className="flex items-start gap-3 p-4">
-                  {/* Drag Handle */}
-                  <div
-                    className="cursor-grab active:cursor-grabbing text-text-muted hover:text-text-secondary pt-6 shrink-0 select-none"
-                    title="Drag to reorder shot"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="9" cy="6" r="1.5" />
-                      <circle cx="15" cy="6" r="1.5" />
-                      <circle cx="9" cy="12" r="1.5" />
-                      <circle cx="15" cy="12" r="1.5" />
-                      <circle cx="9" cy="18" r="1.5" />
-                      <circle cx="15" cy="18" r="1.5" />
-                    </svg>
-                  </div>
-                  {/* Frame Thumbnail */}
-                  <div className="w-28 h-[70px] flex-shrink-0 bg-surface-2 rounded-[calc(var(--radius)*0.5)] overflow-hidden border border-border">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 p-3.5 sm:p-4">
+                  <div className="flex items-center gap-3">
+                    {/* Drag Handle */}
+                    <div
+                      className="cursor-grab active:cursor-grabbing text-text-muted hover:text-text-secondary sm:pt-6 shrink-0 select-none"
+                      title="Drag to reorder shot"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="9" cy="6" r="1.5" />
+                        <circle cx="15" cy="6" r="1.5" />
+                        <circle cx="9" cy="12" r="1.5" />
+                        <circle cx="15" cy="12" r="1.5" />
+                        <circle cx="9" cy="18" r="1.5" />
+                        <circle cx="15" cy="18" r="1.5" />
+                      </svg>
+                    </div>
+                    {/* Frame Thumbnail */}
+                    <div className="w-24 h-[60px] sm:w-28 sm:h-[70px] flex-shrink-0 bg-surface-2 rounded-[calc(var(--radius)*0.5)] overflow-hidden border border-border">
                     {shot.thumbnailUrl ? (
                       <img
                         src={shot.thumbnailUrl}
@@ -317,10 +318,11 @@ export function ReviewForm({
                         </svg>
                       </div>
                     )}
+                    </div>
                   </div>
 
                   {/* Details */}
-                  <div className="flex-1 min-w-0 space-y-2.5">
+                  <div className="flex-1 min-w-0 space-y-2.5 w-full">
                     {/* Top row: beat + frame name + meta */}
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant={beat.variant}>{beat.label}</Badge>
@@ -379,9 +381,10 @@ export function ReviewForm({
       </div>
 
       {/* CTA */}
-      <div className="flex items-center justify-between pt-4 border-t border-border">
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-border">
         <Button
           variant="ghost"
+          className="w-full sm:w-auto justify-center"
           onClick={() => router.push(`/projects/${projectId}/import`)}
         >
           ← Back to import
@@ -389,6 +392,7 @@ export function ReviewForm({
         <Button
           variant="primary"
           size="lg"
+          className="w-full sm:w-auto justify-center"
           onClick={handleRenderVideo}
           disabled={isQueueingRender || !sceneGraphId || shots.length === 0}
         >

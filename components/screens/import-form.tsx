@@ -347,8 +347,8 @@ export function ImportForm({
 
       {/* Figma link input */}
       <Card>
-        <div className="flex gap-3 items-end">
-          <div className="flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+          <div className="flex-1 w-full">
             <Input
               label="Figma prototype link"
               placeholder="https://www.figma.com/design/…"
@@ -375,6 +375,7 @@ export function ImportForm({
             variant="secondary"
             onClick={handleImport}
             disabled={importState.status === "importing"}
+            className="w-full sm:w-auto shrink-0 justify-center"
           >
             {importState.status === "importing" ? (
               <>
@@ -497,10 +498,11 @@ export function ImportForm({
       )}
 
       {/* CTA Section */}
-      <div className="flex flex-col items-end pt-2 space-y-2">
+      <div className="flex flex-col sm:items-end pt-2 space-y-2">
         <Button
           variant="primary"
           size="lg"
+          className="w-full sm:w-auto justify-center"
           onClick={handleGenerateSceneGraph}
           disabled={
             includedCount < 3 ||

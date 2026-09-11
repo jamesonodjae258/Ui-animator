@@ -65,7 +65,7 @@ export function LandingHero() {
   return (
     <section
       ref={containerRef}
-      className="relative pt-12 pb-16 md:pt-20 md:pb-24 px-6 max-w-6xl mx-auto flex flex-col items-center text-center"
+      className="relative pt-12 pb-16 md:pt-20 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto flex flex-col items-center text-center"
     >
       {/* Background subtle radial glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-accent/5 rounded-full blur-3xl pointer-events-none -z-10" />

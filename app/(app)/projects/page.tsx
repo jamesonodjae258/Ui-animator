@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,12 @@ export default async function ProjectsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const serviceClient = (await import("@/lib/supabase/server")).createServiceClient();
-  const effectiveUserId = user?.id ?? "00000000-0000-0000-0000-000000000001";
+  const effectiveUserId = user.id;
 
   let projects: ProjectRow[] = [];
 
@@ -31,8 +36,8 @@ export default async function ProjectsPage() {
   const newProjectId = crypto.randomUUID();
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 animate-page-enter">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-4xl mx-auto px-2 sm:px-6 py-6 sm:py-10 animate-page-enter">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-xl font-semibold text-text-primary">Projects</h1>
           <p className="mt-1 text-sm text-text-muted">
@@ -40,9 +45,9 @@ export default async function ProjectsPage() {
           </p>
         </div>
         <Link href={`/projects/${newProjectId}/import`}>
-          <Button variant="primary">
+          <Button variant="primary" className="w-full sm:w-auto justify-center">
             <svg
-              className="w-4 h-4"
+              className="w-4 h-4 mr-1.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

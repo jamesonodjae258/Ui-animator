@@ -296,8 +296,8 @@ export function RenderResult({
 
       {/* Video metadata */}
       <Card className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Badge variant="subtle">
               {preset === "bold_launch" ? "Bold Launch" : "Clean SaaS"}
             </Badge>
@@ -314,11 +314,11 @@ export function RenderResult({
 
       {/* Actions */}
       <div className="flex flex-col gap-3">
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button
             variant="primary"
             size="lg"
-            className="flex-1"
+            className="w-full sm:flex-1 justify-center"
             onClick={() => {
               if (job?.output_video_url) {
                 window.open(job.output_video_url, "_blank");
@@ -326,7 +326,7 @@ export function RenderResult({
             }}
           >
             <svg
-              className="w-4 h-4"
+              className="w-4 h-4 mr-2"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -340,9 +340,14 @@ export function RenderResult({
             </svg>
             Download MP4
           </Button>
-          <Button variant="secondary" size="lg" onClick={handleCopyLink}>
+          <Button
+            variant="secondary"
+            size="lg"
+            className="w-full sm:w-auto justify-center"
+            onClick={handleCopyLink}
+          >
             <svg
-              className="w-4 h-4"
+              className="w-4 h-4 mr-2"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -358,18 +363,20 @@ export function RenderResult({
           </Button>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
           <Button
             variant="ghost"
             size="sm"
+            className="justify-center"
             onClick={() => router.push(`/projects/${projectId}/review`)}
           >
             ← Back to shot review
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
+              className="justify-center"
               onClick={() => router.push(`/projects/${projectId}/import`)}
             >
               Re-import project
@@ -377,9 +384,10 @@ export function RenderResult({
             <Button
               variant="secondary"
               size="sm"
+              className="justify-center"
               onClick={() => router.push("/projects")}
             >
-              + Create another
+              All projects
             </Button>
           </div>
         </div>

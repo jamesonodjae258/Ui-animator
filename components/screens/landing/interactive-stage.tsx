@@ -150,7 +150,7 @@ export function InteractiveStage() {
   const togglePlay = () => setIsPlaying((p) => !p);
 
   return (
-    <section id="interactive-demo" ref={stageRef} className="py-12 md:py-20 px-6 max-w-6xl mx-auto">
+    <section id="interactive-demo" ref={stageRef} className="py-12 md:py-20 px-4 sm:px-6 max-w-6xl mx-auto">
       {/* Section Header */}
       <div className="flex flex-col items-center text-center mb-10">
         <Badge variant="outline" className="mb-3 font-mono text-[11px]">

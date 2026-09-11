@@ -8,8 +8,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <AppHeader />
 
       {/* Floating Card Content Area */}
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:py-8 flex flex-col">
-        <div className="bg-surface-0 border border-border rounded-2xl shadow-sm p-6 sm:p-8 flex-1 flex flex-col">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-3 py-4 sm:px-6 lg:py-8 flex flex-col">
+        <div className="bg-surface-0 border border-border rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 flex-1 flex flex-col">
           {children}
         </div>
       </main>

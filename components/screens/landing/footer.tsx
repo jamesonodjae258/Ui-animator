@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-border bg-surface-0 py-14 px-6">
+    <footer className="border-t border-border bg-surface-0 py-14 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Top 4-Column SaaS Grid */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-xs">
@@ -60,15 +60,31 @@ export function LandingFooter() {
                   Why not Loom
                 </a>
               </li>
+            </ul>
+          </div>
+
+          {/* Col 2: Framework */}
+          <div className="space-y-3">
+            <div className="font-semibold text-text-primary uppercase tracking-wider text-[11px]">
+              Framework
+            </div>
+            <ul className="space-y-2 text-text-muted">
               <li>
-                <a href="#pricing" className="hover:text-text-primary transition-colors">
-                  Pricing plans
-                </a>
+                <span className="cursor-default">Next.js App Router</span>
+              </li>
+              <li>
+                <span className="cursor-default">Remotion engine</span>
+              </li>
+              <li>
+                <span className="cursor-default">Supabase RLS</span>
+              </li>
+              <li>
+                <span className="cursor-default">Anthropic Claude</span>
               </li>
             </ul>
           </div>
 
-          {/* Col 2: Architecture */}
+          {/* Col 3: Technology */}
           <div className="space-y-3">
             <div className="font-semibold text-text-primary uppercase tracking-wider text-[11px]">
               Technology
@@ -106,7 +122,7 @@ export function LandingFooter() {
             </ul>
           </div>
 
-          {/* Col 3: Community & Studio */}
+          {/* Col 4: Community & Studio */}
           <div className="space-y-3">
             <div className="font-semibold text-text-primary uppercase tracking-wider text-[11px]">
               Studio
@@ -151,7 +167,7 @@ export function LandingFooter() {
           <div>
             © {new Date().getFullYear()} UI Animator Inc. All rights reserved.
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4">
             <span className="text-text-muted">Phase 1 MVP Scope</span>
             <span>•</span>
             <span className="text-text-muted">AES-256 encrypted</span>

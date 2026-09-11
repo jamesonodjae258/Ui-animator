@@ -7,8 +7,8 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 
 const paddingStyles: Record<NonNullable<CardProps["padding"]>, string> = {
   none: "",
-  sm: "p-3",
-  default: "p-5",
+  sm: "p-4",
+  default: "p-6",
   lg: "p-8",
 };
 
@@ -16,7 +16,7 @@ function Card({ children, padding = "default", className = "", ...props }: CardP
   return (
     <div
       className={[
-        "bg-surface-1 border border-border rounded-[var(--radius)]",
+        "bg-surface-0 border border-border rounded-2xl",
         paddingStyles[padding],
         className,
       ].join(" ")}

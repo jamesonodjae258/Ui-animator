@@ -12,11 +12,11 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 w-full">
         {label && (
           <label
             htmlFor={selectId}
-            className="text-sm font-medium text-text-secondary"
+            className="text-xs font-medium text-text-secondary px-1"
           >
             {label}
           </label>
@@ -26,14 +26,14 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             className={[
-              "w-full appearance-none px-3 py-2 pr-8 text-sm",
-              "bg-surface-1 text-text-primary",
-              "border border-border rounded-[var(--radius)]",
+              "w-full appearance-none px-4 py-2 pr-9 text-sm",
+              "bg-surface-0 text-text-primary",
+              "border border-border rounded-full",
               "transition-colors duration-150",
               "hover:border-border-strong",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-transparent",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)] focus-visible:border-transparent",
               "disabled:opacity-50 disabled:cursor-not-allowed",
-              error ? "border-text-muted" : "",
+              error ? "border-red-500" : "",
               className,
             ].join(" ")}
             {...props}
@@ -50,7 +50,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ))}
           </select>
           {/* Chevron icon */}
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
             <svg
               className="h-4 w-4 text-text-muted"
               fill="none"
@@ -63,7 +63,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </div>
         </div>
         {error && (
-          <p className="text-xs text-text-muted">{error}</p>
+          <p className="text-xs text-red-500 px-1">{error}</p>
         )}
       </div>
     );

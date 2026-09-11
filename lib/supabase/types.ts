@@ -87,3 +87,19 @@ export interface RenderJobRow {
   created_at: string;
   updated_at: string;
 }
+
+/** Row type for the `profiles` table. */
+export interface ProfileRow {
+  id: string;
+  email: string | null;
+  name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Insert/Update type for `profiles` table. */
+export interface ProfileInsert {
+  id: string;
+  email?: string | null;
+  name?: string | null;
+}

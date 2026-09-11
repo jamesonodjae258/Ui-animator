@@ -5,25 +5,35 @@
 :root {
   /* Surfaces */
   --surface-0: #ffffff;
-  --surface-1: #f5f5f5;
-  --surface-2: #ebebeb;
+  --surface-1: #f7f7f8;
+  --surface-2: #eeeeef;
 
   /* Text */
   --text-primary: #0a0a0a;
   --text-secondary: #525252;
   --text-muted: #737373; /* Improved contrast for WCAG AA compliance */
 
-  /* Borders */
+  /* Borders (hairline) */
   --border: #e5e5e5;
   --border-strong: #d4d4d4;
 
-  /* Accent */
-  --accent: #525252;
-  --accent-hover: #0a0a0a;
+  /* Primary Fill & Text */
+  --fill-primary: #0a0a0a;
+  --on-primary: #ffffff;
+
+  /* Status Tokens */
+  --status-success-bg: #e6f4ea;
+  --status-success-text: #137333;
+  --status-neutral-bg: #f1f3f4;
+  --status-neutral-text: #5f6368;
+
+  /* Accent (neutral monochrome fallback for focus) */
+  --accent: #0a0a0a;
+  --accent-hover: #262626;
 
   /* Shared tokens */
   --radius: 8px;
-  --focus-ring: 0 0 0 2px var(--accent);
+  --focus-ring: 0 0 0 2px var(--text-primary);
 
   color-scheme: light;
 }
@@ -43,9 +53,19 @@
   --border: #262626;
   --border-strong: #404040;
 
+  /* Primary Fill & Text */
+  --fill-primary: #f5f5f5;
+  --on-primary: #0a0a0a;
+
+  /* Status Tokens */
+  --status-success-bg: #13331b;
+  --status-success-text: #81c995;
+  --status-neutral-bg: #2d2e30;
+  --status-neutral-text: #bdc1c6;
+
   /* Accent */
-  --accent: #a3a3a3;
-  --accent-hover: #f5f5f5;
+  --accent: #f5f5f5;
+  --accent-hover: #e5e5e5;
 
   color-scheme: dark;
 }
@@ -64,8 +84,16 @@
     --border: #262626;
     --border-strong: #404040;
 
-    --accent: #a3a3a3;
-    --accent-hover: #f5f5f5;
+    --fill-primary: #f5f5f5;
+    --on-primary: #0a0a0a;
+
+    --status-success-bg: #13331b;
+    --status-success-text: #81c995;
+    --status-neutral-bg: #2d2e30;
+    --status-neutral-text: #bdc1c6;
+
+    --accent: #f5f5f5;
+    --accent-hover: #e5e5e5;
 
     color-scheme: dark;
   }
@@ -87,6 +115,16 @@
   /* Borders */
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+
+  /* Primary fills */
+  --color-fill-primary: var(--fill-primary);
+  --color-on-primary: var(--on-primary);
+
+  /* Status */
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-text: var(--status-success-text);
+  --color-status-neutral-bg: var(--status-neutral-bg);
+  --color-status-neutral-text: var(--status-neutral-text);
 
   /* Accent */
   --color-accent: var(--accent);
